@@ -1,0 +1,600 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Docker保姆级教程 : Docker 命令手册 | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    Docker保姆级教程 : Docker 命令手册
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-07-17 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/EWiH8QevQ/" class="post-tags">
+                            # Docker
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/PP1ONrR3yT/" class="post-tags">
+                            # Linux
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="docker命令笔记">Docker命令笔记</h1>
+<br>
+<h2 id="docker-学习资源">Docker 学习资源</h2>
+<blockquote>
+<p>Docker官方命令手册 :https://docs.docker.com/reference/</p>
+<p>菜鸟教程命令手册:https://www.runoob.com/docker/docker-command-manual.html</p>
+<p>B站<a href="https://space.bilibili.com/95256449">遇见狂神说</a>UP主视频教学:https://www.bilibili.com/video/BV1og4y1q7M4</p>
+</blockquote>
+<br>
+<br>
+<h2 id="docker镜像命令">Docker镜像命令</h2>
+<br>
+<h3 id="docker-images查看本地镜像">docker images	查看本地镜像</h3>
+<pre><code class="language-shell">docker images [OPTIONS] [REPOSITORY[:TAG]]
+-a	列出本地所有镜像
+-q	列出本地所有镜像且只显示IMAGE ID
+
+docker images -a
+
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+docker images -a
+bf756fb1ae65
+
+docker images hello-world
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+#参数说明
+REPOSITORY			镜像的名字
+TAG					镜像的标签
+IMAGE ID			镜像的ID值
+CREATED				镜像的创建时间
+SIZE				镜像的大小
+
+</code></pre>
+<br>
+<h3 id="docker-search从docker-hub查找镜像">docker search	从Docker Hub查找镜像</h3>
+<blockquote>
+<p>Docker Hub地址:https://hub.docker.com/</p>
+</blockquote>
+<p>从Docker Hub中搜索mysql的结果</p>
+<figure data-type="image" tabindex="1"><img src="https://file.moetu.org/images/2020/07/17/image-2020062415532498204635e27e999eaab.png" alt="image-2020062415532498204635e27e999eaab.png" loading="lazy"></figure>
+<p>通过docker search搜索mysql的结果</p>
+<pre><code class="language-shell">
+docker search mysql
+
+NAME         		DESCRIPTION            			STARS       OFFICIAL        AUTOMATED
+mysql        		MySQL is a widely used...   	9666        [OK]                
+mariadb      		MariaDB is a community-devel.. 	3517      	[OK]                
+mysql/mysql-server  Optimized MySQL Server Docker.. 705                         [OK]
+centos/mysql-57-... MySQL 5.7 SQL database server   77                                      
+
+#通过--filter筛选结果
+docker search mysql --filter=STARS=3000
+NAME         		DESCRIPTION            			STARS       OFFICIAL        AUTOMATED
+mysql        		MySQL is a widely used...   	9666        [OK]                
+mariadb      		MariaDB is a community-devel.. 	3517      	[OK]                
+
+#参数说明
+NAME				镜像的名字
+DESCRIPTION			镜像的描述
+STARS				类似于GitHub里面的star,表示点赞,喜欢
+OFFICIAL			是否为docker官方发布
+AUTOMATED			是否自动搭建
+
+</code></pre>
+<br>
+<h3 id="docker-pull-从docker-hub下载镜像">docker pull 从Docker Hub下载镜像</h3>
+<pre><code class="language-shell">docker pull [OPTIONS] NAME[:TAG|@DIGEST]
+-a	拉取所有包含[NAME]的镜像
+
+#默认下载最新版
+docker pull mysql
+
+Using default tag: latest
+latest: Pulling from library/mysql
+8559a31e96f4: Pull complete 
+d51ce1c2e575: Pull complete 
+c2344adc4858: Pull complete 
+fcf3ceff18fc: Pull complete 
+16da0c38dc5b: Pull complete 
+b905d1797e97: Pull complete 
+4b50d1c6b05c: Pull complete 
+c75914a65ca2: Pull complete 
+1ae8042bdd09: Pull complete 
+453ac13c00a3: Pull complete 
+9e680cd72f08: Pull complete 
+a6b5dc864b6c: Pull complete 
+Digest: sha256:8b7b328a7ff6de46ef96bcf83af048cb00a1c86282bfca0cb119c84568b4caf6
+Status: Downloaded newer image for mysql:latest
+docker.io/library/mysql:latest
+
+#指定版本下载,版本必须在Docker Hub存在
+docker pull mysql:8.0
+8.0: Pulling from library/mysql
+Digest: sha256:8b7b328a7ff6de46ef96bcf83af048cb00a1c86282bfca0cb119c84568b4caf6
+Status: Downloaded newer image for mysql:8.0
+docker.io/library/mysql:8.0
+
+#从镜像库拉取所有tag标签名的镜像
+docker pull mysql -a
+#结果太多了,直接看本地镜像
+docker images
+
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mysql               8.0                 be0dbf01a0f3        2 weeks ago         541MB
+mysql               latest              be0dbf01a0f3        2 weeks ago         541MB
+mysql               5.5                 d404d78aa797        13 months ago       205MB
+mysql               5.5.62              d404d78aa797        13 months ago       205MB
+mysql               5.6.43              bc788a6a2745        15 months ago       256MB
+mysql               5.6.42              27e29668a08a        18 months ago       256MB
+mysql               5.5.61              d306c8812ec3        20 months ago       205MB
+mysql               5.6.41              085b9b6ec8a9        20 months ago       256MB
+mysql               5.5.60              2cd7ceff3e53        23 months ago       205MB
+mysql               5.6.40              50328380b2b4        23 months ago       256MB
+mysql               5.5.59              0da48351c371        2 years ago         205MB
+mysql               5.6.39              079344ce5ebd        2 years ago         256MB
+...
+
+</code></pre>
+<br>
+<h3 id="docker-rmi删除本地镜像">docker rmi	删除本地镜像</h3>
+<pre><code class="language-shell">docker rmi [OPTIONS] IMAGE [IMAGE...]
+-f	强制删除
+
+docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mysql               latest              be0dbf01a0f3        2 weeks ago         541MB
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+#卸载本地镜像的mysql
+docker rmi -f be0dbf01a0f3
+docker rmi -f mysql
+
+#卸载本地所有镜像(一个一个删除)
+docker rmi -f mysql hello-world
+docker rmi -f be0dbf01a0f3 bf756fb1ae65
+
+#卸载本地所有镜像(通过$()传值删除)
+docker rmi -f $(docker images -aq)
+
+</code></pre>
+<br>
+<h2 id="docker容器命令">Docker容器命令</h2>
+<br>
+<br>
+<h3 id="docker-run新建容器并启动">docker run	新建容器并启动</h3>
+<pre><code class="language-shell">docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+--name=&quot;Name&quot;	为容器指定一个名称
+-d				后台运行容器,并返回容器id
+--it			以交互模式运行容器,为容器分配一个伪输入终端
+-p				(小写p)指定容器的端口	格式为 -p 8080(宿主机端口):8080(容器端口)
+-P				(大写p)随机指定端口
+-v				挂载目录				格式为 -v /home/user(宿主机目录):/root/user(容器目录)
+							
+							匿名挂载 -v	容器内路径			  	 
+							具名挂载 -v	卷名:容器内路径			
+							指定路径挂载 -v	宿主机路径:容器内路径
+							
+							只读	在容器内路径后面加 &quot;:ro&quot;
+							读写  在容器内路径后面加 &quot;:rw&quot;
+-e				环境配置
+--volumes-from	从另一个容器当中挂载容器中已经创建好的数据卷
+							docker run -it --name docker02 --volumes-from docker01 centos
+							运行容器docker02挂载到容器docker01上,实现更新数据在容器之间共享
+
+#docker容器使用后台运行,就必须要有一个前台进程,否则docker发现没有应用就会停止容器
+</code></pre>
+<br>
+<h3 id="docker-ps列出正在运行的容器信息">docker ps	列出正在运行的容器信息</h3>
+<pre><code class="language-shell">docker ps [OPTIONS]
+-a		显示所有容器,包括历史容器
+-n=Num	显示最近创建的&quot;n&quot;个容器
+-q		显示容器的ID
+
+</code></pre>
+<br>
+<h3 id="docker退出容器">docker退出容器</h3>
+<pre><code class="language-shell">exit			#终止并退出容器
+Ctrl + P + Q	#不终止并退出容器
+
+</code></pre>
+<br>
+<h3 id="docker-rm删除容器">docker rm	删除容器</h3>
+<pre><code class="language-shell">docker rm [OPTIONS] CONTAINER [CONTAINER...]
+-f		#强制删除一个运行中的容器
+
+#删除容器
+docker rm -f 8c7fefd9e698
+
+#删除所有容器
+docker rm -f $(docker ps -aq)
+docker ps -a -q | xargs docker rm -f
+
+</code></pre>
+<br>
+<h3 id="docker-startstoprestartkill启动停止重启杀掉容器">docker start/stop/restart/kill		启动/停止/重启/杀掉容器</h3>
+<pre><code class="language-shell">docker start CONTAINER		:启动容器
+docker stop CONTAINER		:停止容器
+docker restart CONTAINER	:重启容器
+docker kill CONTAINER		:杀掉容器
+
+</code></pre>
+<br>
+<h3 id="docker-logs获取容器的日志">docker logs		获取容器的日志</h3>
+<pre><code class="language-sh">docker logs [OPTIONS] CONTAINER
+-f			跟踪日志输出
+-t			显示时间戳
+--tail Num	列出最新Num调容器日志
+</code></pre>
+<br>
+<h3 id="docker-top查看容器中运行的进程信息">Docker top		查看容器中运行的进程信息</h3>
+<pre><code class="language-shell">docker top [OPTIONS] CONTAINER [ps OPTIONS]
+</code></pre>
+<br>
+<h3 id="docker-inspect获取容器镜像的元数据">docker inspect		获取容器/镜像的元数据</h3>
+<pre><code class="language-shell">docker inspect [OPTIONS] NAME|ID [NAME|ID...]
+
+#查看centos的元数据
+docker inspect centos
+[
+    {
+        &quot;Id&quot;: &quot;sha256:831691599b88ad6cc2a4abbd0e89661a121aff14cfa289ad840fd3946f274f1f&quot;,
+        &quot;RepoTags&quot;: [
+            &quot;centos:latest&quot;
+        ],
+        &quot;RepoDigests&quot;: [
+            &quot;centos@sha256:4062bbdd1bb0801b0aa38e0f83dece70fb7a5e9bce223423a68de2d8b784b43b&quot;
+        ],
+...
+</code></pre>
+<br>
+<h3 id="docker-exec进入已经运行的容器重新分配终端">Docker exec		进入已经运行的容器(重新分配终端)</h3>
+<pre><code class="language-shell">docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+--it			以交互模式运行容器,为容器分配一个伪输入终端
+
+#进入正在运行的Centos容器
+docker exec -it 336cc1fb92bf /bin/bash
+
+
+</code></pre>
+<br>
+<h3 id="docker-attach连接到正在运行中的容器">Docker attach		连接到正在运行中的容器</h3>
+<pre><code class="language-shell">docker attach [OPTIONS] CONTAINER
+
+#进入正在运行的Centos容器
+docker attach 336cc1fb92bf
+</code></pre>
+<br>
+<h3 id="docker-cp-容器与主机之间数据拷贝">Docker cp 		容器与主机之间数据拷贝</h3>
+<pre><code class="language-shell">docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-
+
+
+docker cp 336cc1fb92bf:/home/test.txt /
+将容器里的/home/test.txt 拷贝到 宿主机的/目录上
+</code></pre>
+<br>
+<h3 id="docker-commit从容器创建一个新的镜像">Docker commit		从容器创建一个新的镜像</h3>
+<pre><code class="language-shell">docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+-m :提交时的说明文字；
+-a :提交的镜像作者；
+
+创建一个镜像
+docker commit -a=&quot;MokYan&quot; -m=&quot;add webapps app&quot; c97729657a71 tomcat-v1:1.0
+
+docker images
+
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+tomcat-v1             1.0              	  366d86150b16        19 seconds ago      652MB
+tomcat                latest              6055d4d564e1        3 days ago          647MB
+
+</code></pre>
+<br>
+<h2 id="docker-数据命令">Docker 数据命令</h2>
+<br>
+<br>
+<h3 id="docker-volume管理docker容器挂载的卷">docker volume		管理docker容器挂载的卷</h3>
+<pre><code class="language-shell">Usage:	docker volume COMMAND
+
+Commands:
+  create      创建一个 volume
+  inspect     查看一个或多个volume 的元数据
+  ls          查看 volumes
+  prune       删除所有未使用的本地 volumes
+  rm          移出一个或多个 volumes
+  
+
+</code></pre>
+<ul>
+<li>docker 默认在主机上会有一个特定的区域（<code>/var/lib/docker/volumes/</code>），该区域用来存放 volume。</li>
+<li>非 docker 进程不应该去修改该区域。</li>
+<li>volume 可以通过 <code>docker volume</code> 进行管理，如创建、删除等操作。</li>
+<li>volume 在生成的时候如果不指定名称，便会随机生成。</li>
+</ul>
+<br>
+<h3 id="docker-file">docker file</h3>
+<pre><code class="language-shell">使用 Dockerfile 定制镜像
+
+1.	创建Docker file文件(名字随意)
+	vim dockerfile1
+	
+2.	编辑docker file文件
+	FROM centos
+	VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]
+	CMD echo &quot;----end----&quot;
+	CMD /bin/bash
+
+3.	构建镜像
+	docker build -f /home/docker-test-volume/dockerfile1 -t mokyan/centos:1.0 .
+	Sending build context to Docker daemon  2.048kB
+    Step 1/4 : FROM centos
+     ---&gt; 831691599b88
+    Step 2/4 : VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]
+     ---&gt; Running in 7aa721724f47
+    Removing intermediate container 7aa721724f47
+     ---&gt; 37cc8ddeb5ef
+    Step 3/4 : CMD echo &quot;----end----&quot;
+     ---&gt; Running in a00fd1594c00
+    Removing intermediate container a00fd1594c00
+     ---&gt; 976fefd5e341
+    Step 4/4 : CMD /bin/bash
+     ---&gt; Running in 3203befb485f
+    Removing intermediate container 3203befb485f
+     ---&gt; e03ef3a4bf68
+    Successfully built e03ef3a4bf68
+    Successfully tagged mokyan/centos:1.0
+    
+4.	查看镜像
+	docker images
+	REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+	mokyan/centos         1.0                 e03ef3a4bf68        16 seconds ago      215MB
+
+注意:
+	编辑docker file文件,里面的命令都是大写的
+	构建镜像时,最后的点是上下文路径,所以上下文路径下不要放无用的文件，因为会一起打包发送给 docker 引擎，如果文件过多会造成过程缓慢。
+	构建镜像时,-t后面接的名字不能存在大写,否则会报错
+	构建镜像时,&quot;#&quot;表示注释
+
+</code></pre>
+<br>
+<h3 id="docker-file-指令">docker file 指令</h3>
+<pre><code class="language-shell">FROM			#基础镜像,基于这个镜像构建
+MAINTAINER		#构建镜像的作者信息
+RUN				#镜像构建时需要运行的命令
+ADD				#添加内容
+WORKDIR			#镜像的工作目录
+VOLUME			#挂载的目录
+EXPOSE			#暴露端口配置
+CMD				#容器启动时需要运行的命令,只有最后一个生效,可被替换
+ENTRYPOINT		#容器启动时需要运行的命令,可以追加命令	
+ENV				#构建的时候设置环境变量
+</code></pre>
+<br>
+<h2 id="docker-网络命令">Docker 网络命令</h2>
+<br>
+<br>
+<h3 id="docker-network">docker network</h3>
+<pre><code class="language-shell">docker network --help
+
+Usage:	docker network COMMAND
+
+Manage networks
+
+Commands:
+  connect     Connect a container to a network
+  create      Create a network
+  disconnect  Disconnect a container from a network
+  inspect     Display detailed information on one or more networks
+  ls          List networks
+  prune       Remove all unused networks
+  rm          Remove one or more networks
+  
+#查看docker 网络适配器模式
+docker network ls
+
+NETWORK ID          NAME                DRIVER              SCOPE
+8c61b8c764f6        bridge              bridge              local
+0fb588f08568        host                host                local
+58d6ff1f424f        none                null                local
+bridge		桥接模式
+host		共享宿主机网络模式
+none		不配置网络
+
+#创建docker 网络适配器 test-net
+docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 test-net
+--driver 		网络适配器模式,默认为bridge
+--subnet		子网掩码配置
+--gateway		网关配置
+
+#删除docker 网络适配器 test-net
+docker network rm test-net 
+
+#为容器添加网络适配器,tomcat01_birdge的网络适配器为默认docker01
+docker network connect test-net tomcat01_birdge 
+
+
+
+</code></pre>
+<br>
+<h2 id="docker-其他命令">Docker 其他命令</h2>
+<br>
+<br>
+<h3 id="docker-info显示-docker-系统信息包括镜像和容器数">docker info		显示 Docker 系统信息，包括镜像和容器数</h3>
+<br>
+<h3 id="docker-version显示-docker-版本信息">docker version		显示 Docker 版本信息</h3>
+<br>
+<h3 id="docker-stats显示docker容器占用系统资源情况">docker stats		显示Docker容器占用系统资源情况</h3>
+<br>
+<h3 id="docker-login登录docker">docker login		登录Docker</h3>
+<pre><code class="language-shell">docker login -u &quot;你的用户名&quot; -p &quot;你的密码&quot;
+</code></pre>
+<br>
+<h3 id="docker-logout退出docker">docker logout		退出Docker</h3>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/docker-an-zhuang-jiao-cheng/" class="post-title gt-a-link">
+                    Docker保姆级教程 : Install Docker
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

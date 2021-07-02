@@ -1,0 +1,292 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>[转载] | 常见WAF拦截页面汇总 | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    [转载] | 常见WAF拦截页面汇总
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-10-18 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/N7YXNlZsc/" class="post-tags">
+                            # WAF
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ov9f1l9vPE/" class="post-tags">
+                            # Web安全
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/k81veSHeEl/" class="post-tags">
+                            # 转载
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <p>#前言</p>
+<blockquote>
+<p>前几天在微信公众号 <font color="#b8dcff">@HACK学习呀</font> 看到一片文章 <a href="https://mp.weixin.qq.com/s/PWkqNsygi-c_S7tW1y_Hxw">干货 | 常见WAF拦截页面总结</a> , 文中提到一位大佬 <font color="#b8dcff">@madcoding</font> 的一片文章 <a href="https://www.mad-coding.cn/2019/12/19/waf%E7%9A%84%E8%AF%86%E5%88%AB%E4%B8%8E%E7%BB%95%E8%BF%87%EF%BC%88%E4%B8%8D%E6%96%AD%E8%A1%A5%E5%85%85%EF%BC%89/">WAF的识别与绕过</a> 两篇文章都有相同的资料和不同的资料 , 为了以后方便查阅,所以将两篇文章的资料进行汇总 . 本文所有资料都是根据两篇文章进行整合,所以若有错误的地方,请大佬指出!!!</p>
+</blockquote>
+<br>
+<h2 id="1-360主机卫士或360webscan">1.    360主机卫士或360webscan</h2>
+<figure data-type="image" tabindex="1"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/360%E4%B8%BB%E6%9C%BA%E5%8D%AB%E5%A3%AB%E6%88%96360webscan.png?raw=true" alt="360主机卫士或360webscan" loading="lazy"></figure>
+<br>
+<h2 id="2-360网站卫士">2.   360网站卫士</h2>
+<figure data-type="image" tabindex="2"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/360%E7%BD%91%E7%AB%99%E5%8D%AB%E5%A3%AB.png?raw=true" alt="360网站卫士" loading="lazy"></figure>
+<br>
+<h2 id="3-d盾">3.   D盾</h2>
+<figure data-type="image" tabindex="3"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/D%E7%9B%BE.png?raw=true" alt="D盾" loading="lazy"></figure>
+<br>
+<h2 id="4-f5-big-ip">4. F5 BIG-IP</h2>
+<p><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-1.png?raw=true" alt="F5 BIG-IP-1" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-2.png?raw=true" alt="F5 BIG-IP-2" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-3.png?raw=true" alt="F5 BIG-IP-3" loading="lazy"></p>
+<br>
+<h2 id="5-mod_securitypng">5.   Mod_Security.png</h2>
+<figure data-type="image" tabindex="4"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/Mod_Security.png?raw=true" alt="Mod_Security.png" loading="lazy"></figure>
+<br>
+<h2 id="6-naxsi-waf">6.   Naxsi WAF</h2>
+<figure data-type="image" tabindex="5"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/Naxsi%20WAF.png?raw=true" alt="Naxsi WAF" loading="lazy"></figure>
+<br>
+<h2 id="7-openrasp">7.   OpenRASP</h2>
+<figure data-type="image" tabindex="6"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/OpenRASP.png?raw=true" alt="OpenRASP" loading="lazy"></figure>
+<br>
+<h2 id="8-upupw安全防护">8.   UPUPW安全防护</h2>
+<figure data-type="image" tabindex="7"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/UPUPW%E5%AE%89%E5%85%A8%E9%98%B2%E6%8A%A4.png?raw=true" alt="UPUPW安全防护" loading="lazy"></figure>
+<br>
+<h2 id="9-dotdefender">9.   dotDefender</h2>
+<figure data-type="image" tabindex="8"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/dotDefender.png?raw=true" alt="dotDefender" loading="lazy"></figure>
+<br>
+<h2 id="10-云锁">10.  云锁</h2>
+<figure data-type="image" tabindex="9"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E4%BA%91%E9%94%81.png?raw=true" alt="云锁" loading="lazy"></figure>
+<br>
+<h2 id="11-创宇盾">11.  创宇盾</h2>
+<figure data-type="image" tabindex="10"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%88%9B%E5%AE%87%E7%9B%BE.png?raw=true" alt="创宇盾" loading="lazy"></figure>
+<br>
+<h2 id="12-华为云">12.  华为云</h2>
+<figure data-type="image" tabindex="11"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%8D%8E%E4%B8%BA%E4%BA%91.png?raw=true" alt="华为云" loading="lazy"></figure>
+<br>
+<h2 id="13-南京铱讯waf">13.  南京铱讯waf</h2>
+<figure data-type="image" tabindex="12"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%8D%97%E4%BA%AC%E9%93%B1%E8%AE%AF%20waf.png?raw=true" alt="南京铱讯waf" loading="lazy"></figure>
+<br>
+<h2 id="14-奇安信网站卫士">14.  奇安信网站卫士</h2>
+<figure data-type="image" tabindex="13"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%A5%87%E5%AE%89%E4%BF%A1%E7%BD%91%E7%AB%99%E5%8D%AB%E5%A3%AB.png?raw=true" alt="奇安信网站卫士" loading="lazy"></figure>
+<br>
+<h2 id="15-安全狗">15.  安全狗</h2>
+<figure data-type="image" tabindex="14"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E5%85%A8%E7%8B%97.png?raw=true" alt="安全狗" loading="lazy"></figure>
+<br>
+<h2 id="16-安域云waf">16.  安域云WAF</h2>
+<figure data-type="image" tabindex="15"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E5%9F%9F%E4%BA%91WAF.png?raw=true" alt="安域云WAF" loading="lazy"></figure>
+<br>
+<h2 id="17-安恒明御waf">17. 安恒明御WAF</h2>
+<figure data-type="image" tabindex="16"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E6%81%92%E6%98%8E%E5%BE%A1WAF.png?raw=true" alt="安恒明御WAF" loading="lazy"></figure>
+<br>
+<h2 id="18-宝塔网站防火墙">18.  宝塔网站防火墙</h2>
+<figure data-type="image" tabindex="17"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%9D%E5%A1%94%E7%BD%91%E7%AB%99%E9%98%B2%E7%81%AB%E5%A2%99.png?raw=true" alt="宝塔网站防火墙" loading="lazy"></figure>
+<br>
+<h2 id="19-护卫神">19.  护卫神</h2>
+<figure data-type="image" tabindex="18"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%8A%A4%E5%8D%AB%E7%A5%9E.png?raw=true" alt="护卫神" loading="lazy"></figure>
+<br>
+<h2 id="20-智创防火墙">20.  智创防火墙</h2>
+<figure data-type="image" tabindex="19"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%99%BA%E5%88%9B%E9%98%B2%E7%81%AB%E5%A2%99.png?raw=true" alt="智创防火墙" loading="lazy"></figure>
+<br>
+<h2 id="21-未知云waf">21.  未知云WAF</h2>
+<figure data-type="image" tabindex="20"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%9C%AA%E7%9F%A5%E4%BA%91WAF.png?raw=true" alt="未知云WAF" loading="lazy"></figure>
+<br>
+<h2 id="22-玄武盾">22.  玄武盾</h2>
+<figure data-type="image" tabindex="21"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%8E%84%E6%AD%A6%E7%9B%BE.png?raw=true" alt="玄武盾" loading="lazy"></figure>
+<br>
+<h2 id="23-百度云">23.  百度云</h2>
+<figure data-type="image" tabindex="22"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%99%BE%E5%BA%A6%E4%BA%91.png?raw=true" alt="百度云" loading="lazy"></figure>
+<br>
+<h2 id="24-网宿云">24.  网宿云</h2>
+<p><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E5%AE%BF%E4%BA%91-2.png?raw=true" alt="网宿云-1" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E5%AE%BF%E4%BA%91.png?raw=true" alt="网宿云-2" loading="lazy"></p>
+<br>
+<h2 id="25-网防g01">25.  网防G01</h2>
+<figure data-type="image" tabindex="23"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E9%98%B2G01.png?raw=true" alt="网防G01" loading="lazy"></figure>
+<br>
+<h2 id="26-腾讯云">26.  腾讯云</h2>
+<figure data-type="image" tabindex="24"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E4%BA%91.png?raw=true" alt="腾讯云" loading="lazy"></figure>
+<br>
+<h2 id="27-腾讯宙斯盾">27.  腾讯宙斯盾</h2>
+<figure data-type="image" tabindex="25"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E5%AE%99%E6%96%AF%E7%9B%BE.png?raw=true" alt="腾讯宙斯盾" loading="lazy"></figure>
+<br>
+<h2 id="28-腾讯门神">28.  腾讯门神</h2>
+<figure data-type="image" tabindex="26"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E9%97%A8%E7%A5%9E.png?raw=true" alt="腾讯门神" loading="lazy"></figure>
+<br>
+<h2 id="29-西数wts-waf">29.  西数WTS-WAF</h2>
+<figure data-type="image" tabindex="27"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%A5%BF%E6%95%B0WTS-WAF.png?raw=true" alt="西数WTS-WAF" loading="lazy"></figure>
+<br>
+<h2 id="30-铱讯waf">30.  铱讯WAF</h2>
+<figure data-type="image" tabindex="28"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%93%B1%E8%AE%AFWAF.png?raw=true" alt="铱讯WAF" loading="lazy"></figure>
+<br>
+<h2 id="31-长亭safeline">31.  长亭SafeLine</h2>
+<figure data-type="image" tabindex="29"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%95%BF%E4%BA%ADSafeLine.png?raw=true" alt="长亭SafeLine" loading="lazy"></figure>
+<br>
+<h2 id="32-阿里云盾">32.  阿里云盾</h2>
+<figure data-type="image" tabindex="30"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%98%BF%E9%87%8C%E4%BA%91%E7%9B%BE.png?raw=true" alt="阿里云盾" loading="lazy"></figure>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/xsshaozime/" class="post-title gt-a-link">
+                    XSS弹窗练习 : xss.haozi.me
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

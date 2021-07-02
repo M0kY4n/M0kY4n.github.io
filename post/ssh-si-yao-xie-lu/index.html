@@ -1,0 +1,267 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SSH-私钥泄露 | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    SSH-私钥泄露
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2021-05-19 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/kKgXiNMfp/" class="post-tags">
+                            # SSH
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ov9f1l9vPE/" class="post-tags">
+                            # Web安全
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h2 id="0x00-环境配置">0x00 环境配置</h2>
+<ol>
+<li>SSH-私钥泄露靶机</li>
+<li>Kali 攻击机</li>
+<li>靶机与攻击机处于同一网段</li>
+</ol>
+<h2 id="0x01-信息收集">0x01 信息收集</h2>
+<ol>
+<li>
+<p>寻找靶机IP</p>
+<p>可以使用<code>netdiscover</code>或者 <code>nmap</code>进行IP扫描</p>
+<pre><code class="language-shell">netdiscover 10.112.132.0/24
+nmap 10.112.132.0/24
+</code></pre>
+</li>
+<li>
+<p>扫描服务</p>
+<p>因为是使用了nmap进行了扫描IP , 所以顺便把服务也一起扫描了</p>
+<pre><code class="language-shell">nmap -A -T4 10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/nmap.jpg?raw=true" alt="nmap.jpg" loading="lazy"></figure>
+</li>
+<li>
+<p>目录扫描</p>
+<p>从nmap扫描结果得知 , 一共存在3个端口 22(SSH) , 80(HTTP) , 31337(ELIET) , 在nmap 综合扫描选项扫描靶机 , 能发现 31337也是运行Http服务 , 对两个Http服务的端口进行目录扫描 , 80结果为空 , 31337结果发现<code>.ssh</code>文件夹</p>
+<figure data-type="image" tabindex="2"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/dirsearch.jpg?raw=true" alt="dirsearch" loading="lazy"></figure>
+<p>robots.txt 有个/taxes目录 , 访问得到一个Flag</p>
+<figure data-type="image" tabindex="3"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/robots.txt.jpg?raw=true" alt="robots.txt" loading="lazy"></figure>
+<figure data-type="image" tabindex="4"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Flag1.jpg?raw=true" alt="Flag1" loading="lazy"></figure>
+<p>访问<code>.ssh</code>下载三个文件</p>
+<p>​	a.	authorized_keys - 公钥</p>
+<p>​	b.	id_rsa - 私钥</p>
+<p>​	c.	id_rsa.pub - 私钥证书</p>
+</li>
+</ol>
+<h2 id="0x02-ssh连接">0x02 SSH连接</h2>
+<p>关于SSH的一些知识-转自<code>TelCruel</code> <a href="https://telcruel.gitee.io/2019/09/21/SSH/">传送门</a></p>
+<ol>
+<li>
+<p>公钥</p>
+<p>查看公钥发现用户名为<code>simon</code></p>
+<figure data-type="image" tabindex="5"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/autorized_key.jpg?raw=true" alt="autorized_keys" loading="lazy"></figure>
+</li>
+<li>
+<p>私钥</p>
+<p>尝试使用公钥登录 , 提示没权限</p>
+<pre><code class="language-shell">ssh -i id_rsa simon@10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Permission_Denied.jpg?raw=true" alt="Permission_Denied" loading="lazy"></figure>
+<p>​</p>
+<p>修改权限 , 再次尝试登录 , 提示需要密码</p>
+<pre><code class="language-shell">chmod 600 id_rsa
+ssh -i id_rsa simon@10.112.132.16
+</code></pre>
+<figure data-type="image" tabindex="7"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/SSH_login_not_password.jpg?raw=true" alt="SSH_login_not_password" loading="lazy"></figure>
+<p>​</p>
+</li>
+<li>
+<p>破解私钥</p>
+<p>使用<code>ssh2john</code>对 id_rsa 秘钥信息转为 John可以识别的信息 , 让使用zcat 破解isacrack 信息</p>
+<pre><code class="language-shell">/usr/share/john/ssh2john.py id_rsa &gt; isacrack
+zcat /usr/share/wordlists/rockyou.txt.gz | john --pipe --rules isacrack
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Zcat&amp;Join.jpg?raw=true" alt="Zcat&amp;Join" loading="lazy"></figure>
+<p>破解出密码为: <code>starwars</code> , 再次登录</p>
+<figure data-type="image" tabindex="9"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/SSH_login.jpg?raw=true" alt="SSH_login" loading="lazy"></figure>
+</li>
+<li>
+<p>信息收集</p>
+<p>在root 目录下 有个 <code>flag.txt</code>与 'read_message.c'  , flag.txt没权限打开 , read_message.c查看发现第二个flag  , 且提示我们需要执行这个源码</p>
+<figure data-type="image" tabindex="10"><img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/Flag2.jpg?raw=true" alt="Flag2" loading="lazy"></figure>
+<p>查找已经编译的程序,并执行</p>
+<pre><code class="language-shel">find / -name &quot;*read_message*&quot; 2&gt;/dev/null
+</code></pre>
+</li>
+</ol>
+<h2 id="0x03-提权">0x03 提权</h2>
+<p>​	这个程序是一个简单的溢出攻击(然而我不会 (汗颜)),直接照搬<code>TelCruel</code>的WP了</p>
+<pre><code> 这里因为gets（buf）没有限制读取的长度，但是buf[]这个数组只能储存20个字符，那么超过20个字符的就会存入缓冲区，将后面的内容覆盖。然后当执行到execve的时候原来要执行program[]内的字符，被覆盖后就可以利用了。所以只要输入SimonAAAAAAAAAAAAAAA/bin/sh,即可进入root的shell
+</code></pre>
+<p>​	执行后 , 权限提升至root , 查看flag.txt 得到 第三个Flag</p>
+<p>​	<img src="https://github.com/MokYan/Figurebed/blob/master/drone/SSH-Server/SSH-%20private%20key%20is%20eaked/flag3.jpg?raw=true" alt="Flag3" loading="lazy"></p>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/ssh-fu-wu-shen-tou-root-zhu-ji/" class="post-title gt-a-link">
+                    SSH-服务渗透root主机
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

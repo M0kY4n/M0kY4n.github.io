@@ -1,0 +1,311 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Windows 全新终端体验 —— Windows Terminal 安装与美化 | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    Windows 全新终端体验 —— Windows Terminal 安装与美化
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2020-06-19 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ctL_Wi8dp/" class="post-tags">
+                            # 终端
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/QbMtAd-8ey/" class="post-tags">
+                            # Windows Terminal
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/-yn7lxip1y/" class="post-tags">
+                            # Terminal
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="windows-terminal安装及美化">Windows Terminal安装及美化</h1>
+<br>
+<h2 id="1下载windows-terminal">1.下载Windows Terminal</h2>
+<p>直接去电脑自带的Microsoft Store搜索下载<br>
+<br></p>
+<h2 id="2下载字体">2.下载字体</h2>
+<blockquote>
+<p>Fira Code | 一个程序员专用字体</p>
+</blockquote>
+<p>Fira 是 Mozilla 主推的字体系列，Fira Code 是基于 Fira Mono 等宽字体的一个扩展，主要特点是加入了编程连字特性（ligatures）。</p>
+<p>Fira Code 就是利用这个特性对编程中的常用符号进行优化，比如把输入的「!=」直接显示成「≠」或者把「&gt;=」变成「≥ 」等等，以此来提高代码的可读性。</p>
+<p><a href="https://github.com/tonsky/FiraCode/releases">下载传送门</a><br>
+<br></p>
+<h2 id="3安装字体">3.安装字体</h2>
+<p>把下载的压缩包,解压 进入ttf文件夹,全选右击为所有用户安装<br>
+<a href="https://moetu.org/image/nXLmY"><img src="https://file.moetu.org/images/2020/06/19/explorer_agVt8Hkkig8db25e402d54ac02.png" alt="安装字体" loading="lazy"></a><br>
+<br></p>
+<h2 id="4安装powershell-core">4.安装PowerShell Core</h2>
+<p>PowerShell Core是跨平台的（Windows，Linux和macOS）自动化和配置工具/框架，可与您的现有工具配合使用，并针对处理结构化数据（例如JSON，CSV，XML等），REST API进行了优化。和对象模型。它包括命令行外壳，关联的脚本语言和用于处理cmdlet的框架。</p>
+<p><font color="green">这个PowerShell Core和你电脑自带的那个又丑又慢,提示还看不懂的Windows PowerShell不是同一个东西</font><br>
+<a href="https://github.com/PowerShell/PowerShell/releases/download/v7.1.0-preview.3/PowerShell-7.1.0-preview.3-win-x64.msi">下载传送门</a><br>
+<br></p>
+<h2 id="5配置终端">5.配置终端</h2>
+<p>打开Windows Terminal , 进入设置 ( 点击 ∨ → Settings )</p>
+<pre><code class="language-json">//设置默认终端为新安装的Powershell Core 
+&quot;defaultProfile&quot;: &quot;{574e775e-4f2a-5b96-ac1e-a2962a402336}&quot;,
+&quot;profiles&quot;:
+{
+    // Powershell 7.1.0-preview.2 配置
+    &quot;guid&quot;: &quot;{574e775e-4f2a-5b96-ac1e-a2962a402336}&quot;,
+    &quot;hidden&quot;: false,
+    &quot;name&quot;: &quot;pwsh&quot;,
+    // 注意：一定要写上 -nologo，否则开启 powershll 会有一段话输出，很讨厌！
+    &quot;commandline&quot;: &quot;C:/Program Files/PowerShell/7-preview/pwsh.exe -nologo&quot;,
+    &quot;source&quot;: &quot;Windows.Terminal.PowershellCore&quot;,
+    // 启动菜单一定要设置为 &lt;.&gt;，否则后面重要的一步将会无效！
+    &quot;startingDirectory&quot;: &quot;.&quot;,
+    // 字体
+    &quot;fontFace&quot;: &quot;Fira Code&quot;,
+    &quot;fontSize&quot;: 11,
+    &quot;historySize&quot;: 9001,
+    &quot;padding&quot;: &quot;5, 5, 20, 25&quot;,
+    &quot;snapOnInput&quot;: true,
+    &quot;useAcrylic&quot;: false,
+    // 颜色
+    &quot;colorScheme&quot;: &quot;AdventureTime&quot;
+    //背景
+    &quot;backgroundImage&quot;: &quot;C:/bg1.jpg&quot;,
+    &quot;backgroundImageOpacity&quot;: 0.7,
+    &quot;backgroundImageStretchMode&quot;: &quot;fill&quot;
+},
+&quot;schemes&quot;: [
+    	{
+           &quot;name&quot;: &quot;AdventureTime&quot;,
+           &quot;black&quot;: &quot;#050404&quot;,
+           &quot;red&quot;: &quot;#bd0013&quot;,
+           &quot;green&quot;: &quot;#4ab118&quot;,
+           &quot;yellow&quot;: &quot;#e7741e&quot;,
+           &quot;blue&quot;: &quot;#0f4ac6&quot;,
+           &quot;purple&quot;: &quot;#665993&quot;,
+           &quot;cyan&quot;: &quot;#70a598&quot;,
+           &quot;white&quot;: &quot;#f8dcc0&quot;,
+           &quot;brightBlack&quot;: &quot;#4e7cbf&quot;,
+           &quot;brightRed&quot;: &quot;#fc5f5a&quot;,
+           &quot;brightGreen&quot;: &quot;#9eff6e&quot;,
+           &quot;brightYellow&quot;: &quot;#efc11a&quot;,
+           &quot;brightBlue&quot;: &quot;#1997c6&quot;,
+           &quot;brightPurple&quot;: &quot;#9b5953&quot;,
+           &quot;brightCyan&quot;: &quot;#c8faf4&quot;,
+           &quot;brightWhite&quot;: &quot;#f6f5fb&quot;,
+           &quot;background&quot;: &quot;#1f1d45&quot;,
+           &quot;foreground&quot;: &quot;#f8dcc0&quot;
+       }
+    ],
+</code></pre>
+<p>每个人的审美都不同,会JSON的可以自己修改配色,不会赶紧去学🤓🤓🤓<br>
+<br></p>
+<h2 id="6安装powershell-插件">6.安装PowerShell 插件</h2>
+<p>打开Windows Terminal , 执行以下命令</p>
+<pre><code class="language-shell"># 1. 安装 PSReadline 包，该插件可以让Windows Terminal执行linux命令
+Install-Module -Name PSReadLine -AllowPrerelease -Force
+
+# 2. 安装 posh-git 包，让你的 git 更好用
+Install-Module posh-git -Scope CurrentUser
+
+# 3. 安装 oh-my-posh 包，让你的命令行更酷炫、优雅
+Install-Module oh-my-posh -Scope CurrentUser
+</code></pre>
+<p>最后两个包可能会被提示不受系统信任 , 如果提示输入Y回车即可<br>
+<br></p>
+<h2 id="7设置powershell-插件">7.设置PowerShell 插件</h2>
+<p>打开Windows Terminal , 执行<code>$Profile</code>得到一个路径</p>
+<pre><code class="language-shell">C:\Users\当前用户名\Documents\PowerShell\Microsoft.PowerShell_profile.ps1
+</code></pre>
+<p>打开这个Microsoft.PowerShell_profile.ps1文件</p>
+<pre><code class="language-shell"># 引入 posh-git
+Import-Module posh-git
+
+# 引入 oh-my-posh
+Import-Module oh-my-posh
+
+# 设置 PowerShell 主题
+Set-Theme AgnosterPlus
+
+主题文件存放在 C:\Users\当前用户名\Documents\PowerShell\Modules\oh-my-posh\2.0.440\Themes
+
+</code></pre>
+<br>
+<h2 id="8设置右键菜单">8.设置右键菜单</h2>
+<p><a href="https://raw.githubusercontent.com/lextm/windowsterminal-shell/master/install.ps1">安装脚本传送门</a></p>
+<p><a href="https://raw.githubusercontent.com/lextm/windowsterminal-shell/master/uninstall.ps1">卸载脚本传送门</a></p>
+<pre><code class="language-shell">#运行安装脚本
+.\install.ps1 [Default\Flat\mini]
+
+#运行卸载脚本
+.\uninstall.ps1
+</code></pre>
+<figure data-type="image" tabindex="1"><a href="https://moetu.org/image/nXT3q"><img src="https://file.moetu.org/images/2020/06/19/ImBJ3uwxF8cbbb3e14ff0ab17c.png" alt="右键菜单" loading="lazy"></a></figure>
+<br>
+<h2 id="9完成安装">9.完成安装</h2>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/Windows-Powershell.png" alt="" loading="lazy"></figure>
+<p><font align="center" font-size="12px">(ps:本文所要程序均为以管理员运行,若文章显示不正常,狂按F5😘)</font></p>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/git-jiao-cheng-ru-men-dao-ru-tu/" class="post-title gt-a-link">
+                    Git保姆级教程 : 入门到入土
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>

