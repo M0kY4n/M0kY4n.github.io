@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
-    <id>https://M0kY4n.github.io111</id>
+    <id>https://M0kY4n.github.io/Websec</id>
     <title>MokYan</title>
-    <updated>2021-07-02T11:37:25.027Z</updated>
+    <updated>2021-07-04T09:31:36.716Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
-    <link rel="alternate" href="https://M0kY4n.github.io111"/>
-    <link rel="self" href="https://M0kY4n.github.io111/atom.xml"/>
+    <link rel="alternate" href="https://M0kY4n.github.io/Websec"/>
+    <link rel="self" href="https://M0kY4n.github.io/Websec/atom.xml"/>
     <subtitle>The more you know, the more you don&apos;t know</subtitle>
-    <logo>https://M0kY4n.github.io111/images/avatar.png</logo>
-    <icon>https://M0kY4n.github.io111/favicon.ico</icon>
+    <logo>https://M0kY4n.github.io/Websec/images/avatar.png</logo>
+    <icon>https://M0kY4n.github.io/Websec/favicon.ico</icon>
     <rights>All rights reserved 2021, MokYan</rights>
     <entry>
         <title type="html"><![CDATA[SSH-私钥泄露]]></title>
-        <id>https://M0kY4n.github.io111/post/ssh-si-yao-xie-lu/</id>
-        <link href="https://M0kY4n.github.io111/post/ssh-si-yao-xie-lu/">
+        <id>https://M0kY4n.github.io/Websec/post/ssh-si-yao-xie-lu/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/ssh-si-yao-xie-lu/">
         </link>
         <updated>2021-05-19T15:21:08.000Z</updated>
         <content type="html"><![CDATA[<h2 id="0x00-环境配置">0x00 环境配置</h2>
@@ -102,8 +102,8 @@ zcat /usr/share/wordlists/rockyou.txt.gz | john --pipe --rules isacrack
     </entry>
     <entry>
         <title type="html"><![CDATA[SSH-服务渗透root主机]]></title>
-        <id>https://M0kY4n.github.io111/post/ssh-fu-wu-shen-tou-root-zhu-ji/</id>
-        <link href="https://M0kY4n.github.io111/post/ssh-fu-wu-shen-tou-root-zhu-ji/">
+        <id>https://M0kY4n.github.io/Websec/post/ssh-fu-wu-shen-tou-root-zhu-ji/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/ssh-fu-wu-shen-tou-root-zhu-ji/">
         </link>
         <updated>2021-04-01T12:14:06.000Z</updated>
         <content type="html"><![CDATA[<h2 id="0x00-环境配置">0x00 环境配置</h2>
@@ -218,8 +218,8 @@ python -c &quot;import pty; pty.spawn('/bin/bash')&quot;
     </entry>
     <entry>
         <title type="html"><![CDATA[Nmap 学习手册]]></title>
-        <id>https://M0kY4n.github.io111/post/nmap-xue-xi-shou-ce/</id>
-        <link href="https://M0kY4n.github.io111/post/nmap-xue-xi-shou-ce/">
+        <id>https://M0kY4n.github.io/Websec/post/nmap-xue-xi-shou-ce/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/nmap-xue-xi-shou-ce/">
         </link>
         <updated>2021-03-12T13:19:54.000Z</updated>
         <content type="html"><![CDATA[<p>nmap学习手册</p>
@@ -364,8 +364,8 @@ python -c &quot;import pty; pty.spawn('/bin/bash')&quot;
     </entry>
     <entry>
         <title type="html"><![CDATA[XSS弹窗练习 : http://test.xss.tv]]></title>
-        <id>https://M0kY4n.github.io111/post/testxsstv/</id>
-        <link href="https://M0kY4n.github.io111/post/testxsstv/">
+        <id>https://M0kY4n.github.io/Websec/post/testxsstv/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/testxsstv/">
         </link>
         <updated>2021-01-07T11:05:33.000Z</updated>
         <content type="html"><![CDATA[<h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
@@ -723,8 +723,8 @@ echo &quot;&lt;center&gt;&quot;.$str5.&quot;&lt;/center&gt;&quot;;
     </entry>
     <entry>
         <title type="html"><![CDATA[[转载] | 常见WAF拦截页面汇总]]></title>
-        <id>https://M0kY4n.github.io111/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/</id>
-        <link href="https://M0kY4n.github.io111/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/">
+        <id>https://M0kY4n.github.io/Websec/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/zhuan-zai-or-chang-jian-waf-lan-jie-ye-mian-hui-zong/">
         </link>
         <updated>2020-10-18T06:06:28.000Z</updated>
         <content type="html"><![CDATA[<p>#前言</p>
@@ -834,8 +834,8 @@ echo &quot;&lt;center&gt;&quot;.$str5.&quot;&lt;/center&gt;&quot;;
     </entry>
     <entry>
         <title type="html"><![CDATA[XSS弹窗练习 : xss.haozi.me]]></title>
-        <id>https://M0kY4n.github.io111/post/xsshaozime/</id>
-        <link href="https://M0kY4n.github.io111/post/xsshaozime/">
+        <id>https://M0kY4n.github.io/Websec/post/xsshaozime/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/xsshaozime/">
         </link>
         <updated>2020-07-28T12:30:31.000Z</updated>
         <content type="html"><![CDATA[<h1 id="xss弹窗闯关练习">XSS弹窗闯关练习</h1>
@@ -1255,8 +1255,8 @@ function escape (s) {
     </entry>
     <entry>
         <title type="html"><![CDATA[文件上传漏洞总结 : Upload-Labs通关手册]]></title>
-        <id>https://M0kY4n.github.io111/post/upload-labs-tong-guan-shou-ce/</id>
-        <link href="https://M0kY4n.github.io111/post/upload-labs-tong-guan-shou-ce/">
+        <id>https://M0kY4n.github.io/Websec/post/upload-labs-tong-guan-shou-ce/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/upload-labs-tong-guan-shou-ce/">
         </link>
         <updated>2020-07-22T13:41:47.000Z</updated>
         <content type="html"><![CDATA[<h1 id="upload-labs通关手册">Upload-Labs通关手册</h1>
@@ -2371,8 +2371,8 @@ if(!empty($_FILES['upload_file'])){
     </entry>
     <entry>
         <title type="html"><![CDATA[Docker保姆级教程 : Docker 命令手册]]></title>
-        <id>https://M0kY4n.github.io111/post/docker-ming-ling-shou-ce/</id>
-        <link href="https://M0kY4n.github.io111/post/docker-ming-ling-shou-ce/">
+        <id>https://M0kY4n.github.io/Websec/post/docker-ming-ling-shou-ce/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/docker-ming-ling-shou-ce/">
         </link>
         <updated>2020-07-17T03:12:21.000Z</updated>
         <content type="html"><![CDATA[<h1 id="docker命令笔记">Docker命令笔记</h1>
@@ -2794,8 +2794,8 @@ docker network connect test-net tomcat01_birdge
     </entry>
     <entry>
         <title type="html"><![CDATA[Docker保姆级教程 : Install Docker]]></title>
-        <id>https://M0kY4n.github.io111/post/docker-an-zhuang-jiao-cheng/</id>
-        <link href="https://M0kY4n.github.io111/post/docker-an-zhuang-jiao-cheng/">
+        <id>https://M0kY4n.github.io/Websec/post/docker-an-zhuang-jiao-cheng/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/docker-an-zhuang-jiao-cheng/">
         </link>
         <updated>2020-06-27T03:48:55.000Z</updated>
         <content type="html"><![CDATA[<h1 id="docker安装教程">Docker安装教程</h1>
@@ -2929,8 +2929,8 @@ systemctl restart docker
     </entry>
     <entry>
         <title type="html"><![CDATA[上网冲浪小技巧——下载高清专辑封面]]></title>
-        <id>https://M0kY4n.github.io111/post/gao-qing-zhuan-ji-feng-mian/</id>
-        <link href="https://M0kY4n.github.io111/post/gao-qing-zhuan-ji-feng-mian/">
+        <id>https://M0kY4n.github.io/Websec/post/gao-qing-zhuan-ji-feng-mian/</id>
+        <link href="https://M0kY4n.github.io/Websec/post/gao-qing-zhuan-ji-feng-mian/">
         </link>
         <updated>2020-06-23T18:21:46.000Z</updated>
         <content type="html"><![CDATA[<blockquote>
